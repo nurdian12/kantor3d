@@ -22,9 +22,22 @@ export function useAgentSocket(url: string = WS_URL) {
     let timer: ReturnType<typeof setTimeout>;
     const st = useMissionStore.getState;
 
-    const connect = () => {
+    const retryLater = () => { timer = setTimeout(connect, Math.min(1000 * 2 ** retry++, 15000)); };
+
+    const connect = async () => {
       st().setConnection("connecting");
-      const ws = new WebSocket(url);
+      // Ambil tiket sekali-pakai dari Next (sesi login dicek di sana). Tanpa auth -> tiket null.
+      let full = url;
+      try {
+        const r = await fetch("/api/ws-ticket", { cache: "no-store" });
+        if (r.status === 401) { window.location.href = "/login"; return; }
+        if (r.ok) {
+          const { ticket } = await r.json();
+          if (ticket) { full += (url.includes("?") ? "&" : "?") + "ticket=" + encodeURIComponent(ticket); st().setAuthenticated(true); }
+        }
+      } catch { if (!closed) retryLater(); return; }
+      if (closed) return;
+      const ws = new WebSocket(full);
       socket = ws;
       ws.onopen = () => { retry = 0; st().setConnection("live"); };
       ws.onmessage = (e) => {
@@ -38,7 +51,7 @@ export function useAgentSocket(url: string = WS_URL) {
         if (socket === ws) socket = null;
         if (closed) return;
         st().setConnection("connecting");
-        timer = setTimeout(connect, Math.min(1000 * 2 ** retry++, 15000));
+        retryLater();
       };
       ws.onerror = () => ws.close();
     };

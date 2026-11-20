@@ -55,6 +55,8 @@ interface MissionState {
   theme: Theme;
   simulate: boolean;
   connection: Connection;
+  authenticated: boolean;
+  setAuthenticated: (v: boolean) => void;
   focus: Focus;
   follow: boolean;
   setFollow: (v: boolean) => void;
@@ -83,6 +85,8 @@ export const useMissionStore = create<MissionState>((set, get) => ({
   theme: "dark",
   simulate: true,
   connection: "offline",
+  authenticated: false,
+  setAuthenticated: (authenticated) => set({ authenticated }),
   focus: "all",
   follow: true,
   setFollow: (follow) => set({ follow }),

@@ -10,7 +10,7 @@ import { useAgentSocket } from "@/lib/useAgentSocket";
 const Scene3D = dynamic(() => import("./Scene3D"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-slate-500">Memuat kantor 3D…</div> });
 
 export default function Dashboard() {
-  const { viewMode, setViewMode, theme, setTheme, simulate, connection, focus, setFocus, selectedId, follow, setFollow, agents, select } = useMissionStore();
+  const { viewMode, setViewMode, theme, setTheme, simulate, connection, focus, setFocus, selectedId, follow, setFollow, agents, select, authenticated } = useMissionStore();
   const selected = agents.find((a) => a.id === selectedId);
   useAgentSocket();
 
@@ -56,6 +56,10 @@ export default function Dashboard() {
             <button className={btn(viewMode === "3d")} onClick={() => setViewMode("3d")}>3D View</button>
             <button className={btn(viewMode === "2d")} onClick={() => setViewMode("2d")}>2D Overview</button>
           </div>
+          {authenticated && (
+            <button onClick={async () => { await fetch("/api/logout", { method: "POST" }); window.location.href = "/login"; }}
+              className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-medium hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Keluar</button>
+          )}
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label="Ganti tema"
             className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-medium hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">
             {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
