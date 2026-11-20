@@ -10,7 +10,8 @@ import { useAgentSocket } from "@/lib/useAgentSocket";
 const Scene3D = dynamic(() => import("./Scene3D"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-slate-500">Memuat kantor 3D…</div> });
 
 export default function Dashboard() {
-  const { viewMode, setViewMode, theme, setTheme, simulate, connection, focus, setFocus } = useMissionStore();
+  const { viewMode, setViewMode, theme, setTheme, simulate, connection, focus, setFocus, selectedId, follow, setFollow, agents, select } = useMissionStore();
+  const selected = agents.find((a) => a.id === selectedId);
   useAgentSocket();
 
   // Tema: baca preferensi tersimpan, sinkronkan ke <html class="dark">
@@ -72,7 +73,17 @@ export default function Dashboard() {
               ))}
             </div>
           )}
-          {viewMode === "3d" && <p className="pointer-events-none absolute bottom-3 left-4 rounded-md bg-slate-900/60 px-2 py-1 text-[11px] text-white">Drag: putar · Scroll: zoom · Klik karakter untuk filter log</p>}
+          {viewMode === "3d" && selected && (
+            <div className="absolute left-4 top-[68px] flex items-center gap-2 rounded-xl bg-white/80 px-3 py-1.5 text-xs shadow backdrop-blur dark:bg-slate-900/80">
+              <span className="h-2 w-2 rounded-full" style={{ background: selected.color }} />
+              <span className="font-medium">{selected.name}</span>
+              <button onClick={() => setFollow(!follow)} className={`rounded-md px-2 py-0.5 font-medium ${follow ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"}`}>
+                {follow ? "Mengikuti" : "Ikuti"}
+              </button>
+              <button onClick={() => select(null)} aria-label="Batal pilih" className="text-slate-500 hover:text-slate-800 dark:hover:text-white">✕</button>
+            </div>
+          )}
+          {viewMode === "3d" && <p className="pointer-events-none absolute bottom-3 left-4 rounded-md bg-slate-900/60 px-2 py-1 text-[11px] text-white">Drag: putar · Scroll: zoom · Klik karakter: kamera mengikuti & filter log</p>}
         </section>
         <div className="max-h-[50vh] lg:max-h-none"><QuickPanel /></div>
       </main>

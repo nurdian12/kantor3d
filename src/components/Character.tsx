@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
@@ -8,6 +8,8 @@ import { DESKS, FLOOR_H, IDLE_SPOTS, STAIRS, STAIR_APPROACH_1, STAIR_APPROACH_2,
 import { useMissionStore, statusLabel } from "@/store/useMissionStore";
 
 const SPEED = 2.6;
+/** Registri objek 3D tiap agen (dipakai kamera untuk mengikuti agen) */
+export const agentObjects = new Map<string, THREE.Object3D>();
 type V3 = [number, number, number];
 
 export function spotFor(agent: Agent): Spot {
@@ -45,6 +47,11 @@ export function Character({ agent }: { agent: Agent }) {
   const armR = useRef<THREE.Group>(null);
   const ring = useRef<THREE.Mesh>(null);
   const select = useMissionStore((s) => s.select);
+  useEffect(() => {
+    const o = root.current;
+    if (o) agentObjects.set(agent.id, o);
+    return () => { agentObjects.delete(agent.id); };
+  }, [agent.id]);
   const [tagShown, setTagShown] = useState(true);
   const selected = useMissionStore((s) => s.selectedId === agent.id);
 

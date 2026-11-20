@@ -56,6 +56,8 @@ interface MissionState {
   simulate: boolean;
   connection: Connection;
   focus: Focus;
+  follow: boolean;
+  setFollow: (v: boolean) => void;
   setFocus: (f: Focus) => void;
   selectedId: string | null;
   setStatus: (id: string, status: AgentStatus) => void;
@@ -82,6 +84,8 @@ export const useMissionStore = create<MissionState>((set, get) => ({
   simulate: true,
   connection: "offline",
   focus: "all",
+  follow: true,
+  setFollow: (follow) => set({ follow }),
   setFocus: (focus) => set({ focus }),
   selectedId: null,
 
@@ -111,7 +115,7 @@ export const useMissionStore = create<MissionState>((set, get) => ({
   setViewMode: (viewMode) => set({ viewMode }),
   setTheme: (theme) => set({ theme }),
   toggleSimulate: () => set((s) => ({ simulate: !s.simulate })),
-  select: (selectedId) => set({ selectedId }),
+  select: (selectedId) => set((s) => ({ selectedId, follow: selectedId && selectedId !== s.selectedId ? true : s.follow })),
   setConnection: (connection) => set({ connection }),
   applySnapshot: (agents, logs) =>
     set((s) => ({

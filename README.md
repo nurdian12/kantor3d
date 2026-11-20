@@ -29,3 +29,8 @@ Klien reconnect otomatis (exponential backoff). Agen dari server dipetakan ke 6 
 ## Fokus kamera
 Tombol **Semua / Lantai 1 / Lantai 2** di pojok kiri atas tampilan 3D menganimasikan kamera ke preset (`PRESETS` di `Scene3D.tsx`).
 Fokus Lantai 1 menyembunyikan lantai 2 dan karakter di dalamnya agar kedua baris meja terlihat penuh dari atas.
+
+## Kamera mengikuti agen
+Klik agen (di scene 3D atau di Quick Panel): kamera menghaluskan gerak ke agen tersebut, zoom otomatis sekali, lalu terus mengikuti
+(termasuk saat naik/turun tangga) sambil tetap bisa diputar dan di-zoom. Chip di kiri atas bisa menjeda ("Mengikuti" / "Ikuti")
+atau membatalkan pilihan (✕). Jika agen ada di lantai yang disembunyikan oleh fokus lantai, fokus dikembalikan ke "Semua".

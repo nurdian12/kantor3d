@@ -4,7 +4,8 @@ import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Office } from "./Office";
-import { Character } from "./Character";
+import { Character, agentObjects } from "./Character";
+import { FLOOR_H } from "@/lib/layout";
 import { useMissionStore, type Focus } from "@/store/useMissionStore";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
@@ -20,8 +21,40 @@ function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl |
   const focus = useMissionStore((s) => s.focus);
   const anim = useRef({ t: 1, from: new THREE.Vector3(), fromT: new THREE.Vector3(), first: true });
   useEffect(() => { anim.current.t = 0; anim.current.first = true; }, [focus]);
+  // --- ikuti agen terpilih ---
+  const selectedId = useMissionStore((s) => s.selectedId);
+  const follow = useMissionStore((s) => s.follow);
+  const approach = useRef(0); // detik sisa fase "mendekat" (zoom otomatis)
+  useEffect(() => {
+    if (!selectedId) return;
+    approach.current = 2.5;
+    // bila agen ada di lantai yang disembunyikan, tampilkan semua lantai
+    const o = agentObjects.get(selectedId);
+    const st = useMissionStore.getState();
+    if (o && st.focus !== "all" && (st.focus === "1") !== (o.position.y < FLOOR_H / 2)) st.setFocus("all");
+  }, [selectedId]);
+  const tmp = useRef({ d: new THREE.Vector3(), dir: new THREE.Vector3() });
+
   useFrame(({ camera }, dt) => {
     const a = anim.current, c = controls.current;
+    if (c && a.t >= 1 && follow && selectedId) {
+      const o = agentObjects.get(selectedId);
+      if (o) {
+        const { d, dir } = tmp.current;
+        const k = 1 - Math.exp(-dt * 5);
+        d.copy(o.position).add(new THREE.Vector3(0, 1.0, 0)).sub(c.target).multiplyScalar(k);
+        c.target.add(d);
+        camera.position.add(d); // pertahankan sudut & jarak pandang pengguna
+        if (approach.current > 0) {
+          approach.current -= dt;
+          dir.copy(camera.position).sub(c.target);
+          const len = dir.length();
+          dir.setLength(len + (11 - len) * k);
+          camera.position.copy(c.target).add(dir);
+        }
+        c.update();
+      }
+    }
     if (!c || a.t >= 1) return;
     if (a.first) { a.from.copy(camera.position); a.fromT.copy(c.target); a.first = false; }
     a.t = Math.min(1, a.t + dt / 1.1);
