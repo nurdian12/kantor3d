@@ -1,12 +1,12 @@
 import { create } from "zustand";
-import type { Agent, AgentStatus, IdleSpotId, LogEntry } from "@/lib/types";
+import type { Agent, AgentStatus, LogEntry } from "@/lib/types";
+import { CAPACITY } from "@/lib/layout";
 import type { RemoteAgent, RemoteLog } from "@/lib/protocol";
 
 export type ViewMode = "3d" | "2d";
 export type Theme = "light" | "dark";
 export type Connection = "offline" | "connecting" | "live";
 
-const SPOTS: IdleSpotId[] = ["lounge", "bedroom", "balcony"];
 const PALETTE = ["#6366f1", "#10b981", "#f59e0b", "#ec4899", "#06b6d4", "#8b5cf6"];
 
 /** Ubah agen dari server menjadi Agent lokal (warna/meja/spot idle dipertahankan bila agen sudah dikenal) */
@@ -18,8 +18,8 @@ function toAgent(r: RemoteAgent, i: number, prev?: Agent): Agent {
     color: prev?.color ?? PALETTE[i % PALETTE.length],
     status: r.status,
     task: r.task ?? prev?.task ?? "",
-    idleSpot: prev?.idleSpot ?? SPOTS[i % SPOTS.length],
-    deskIndex: prev?.deskIndex ?? i % 3, // layout saat ini punya 3 meja
+    idleIndex: prev?.idleIndex ?? i % CAPACITY,
+    deskIndex: prev?.deskIndex ?? i % CAPACITY,
   };
 }
 const toLog = (l: RemoteLog): LogEntry => ({ id: l.id ?? ++logSeq, agentId: l.agentId, time: l.time ?? Date.now(), level: l.level ?? "info", message: l.message });
@@ -27,9 +27,9 @@ const toLog = (l: RemoteLog): LogEntry => ({ id: l.id ?? ++logSeq, agentId: l.ag
 const now = Date.now();
 
 const INITIAL_AGENTS: Agent[] = [
-  { id: "lead", name: "Lead Agent", role: "Orkestrator", color: "#6366f1", status: "working", task: "Mengoordinasi sprint & delegasi tugas", idleSpot: "lounge", deskIndex: 0 },
-  { id: "engineer", name: "Lead Engineer", role: "Engineering", color: "#10b981", status: "working", task: "Refactor modul autentikasi API", idleSpot: "bedroom", deskIndex: 1 },
-  { id: "researcher", name: "Content Researcher", role: "Riset Konten", color: "#f59e0b", status: "idle", task: "Menunggu brief riset berikutnya", idleSpot: "balcony", deskIndex: 2 },
+  { id: "lead", name: "Lead Agent", role: "Orkestrator", color: "#6366f1", status: "working", task: "Mengoordinasi sprint & delegasi tugas", idleIndex: 0, deskIndex: 0 },
+  { id: "engineer", name: "Lead Engineer", role: "Engineering", color: "#10b981", status: "working", task: "Refactor modul autentikasi API", idleIndex: 1, deskIndex: 1 },
+  { id: "researcher", name: "Content Researcher", role: "Riset Konten", color: "#f59e0b", status: "idle", task: "Menunggu brief riset berikutnya", idleIndex: 2, deskIndex: 2 },
 ];
 
 const INITIAL_LOGS: LogEntry[] = [

@@ -1,6 +1,5 @@
 export type AgentStatus = "working" | "idle" | "error";
 export type Pose = "sit" | "stand" | "lie";
-export type IdleSpotId = "lounge" | "bedroom" | "balcony";
 
 export interface Agent {
   id: string;
@@ -9,8 +8,8 @@ export interface Agent {
   color: string;
   status: AgentStatus;
   task: string;
-  /** Spot yang dipakai saat idle */
-  idleSpot: IdleSpotId;
+  /** Indeks spot istirahat (IDLE_SPOTS) saat idle */
+  idleIndex: number;
   deskIndex: number;
 }
 

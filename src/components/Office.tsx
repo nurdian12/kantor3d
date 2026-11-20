@@ -110,7 +110,7 @@ export function Office({ theme }: { theme: Theme }) {
 
       {/* ===== LANTAI 1: workstation ===== */}
       {DESKS.map((d, i) => {
-        const a = agents.find((x) => x.deskIndex === i);
+        const a = agents.find((x) => x.deskIndex % DESKS.length === i && x.status === "working") ?? agents.find((x) => x.deskIndex % DESKS.length === i);
         return <Desk key={i} x={d.pos[0]} z={d.pos[2] - 1.1} color={desk} agentColor={a?.color ?? "#64748b"} active={a?.status === "working"} />;
       })}
       <Box p={[6.8, 0.6, 2.2]} s={[2.2, 0.5, 0.9]} c={dark ? "#475569" : "#94a3b8"} />
@@ -137,13 +137,17 @@ export function Office({ theme }: { theme: Theme }) {
       {/* partisi kamar */}
       <Box p={[-1.1, H + 1.1, -2.4]} s={[0.12, 2.2, 3.2]} c={wallSide} o={0.5} />
       <Box p={[3.9, H + 1.1, -2.4]} s={[0.12, 2.2, 3.2]} c={wallSide} o={0.5} />
-      {/* tempat tidur */}
-      <Box p={[1.4, H + 0.25, -2.4]} s={[1.7, 0.5, 2.7]} c="#475569" />
-      <Box p={[1.4, H + 0.55, -2.4]} s={[1.6, 0.14, 2.6]} c="#f1f5f9" />
-      <Box p={[1.4, H + 0.72, -3.35]} s={[1.0, 0.18, 0.5]} c="#e2e8f0" />
-      <Box p={[1.4, H + 0.9, -3.9]} s={[1.9, 1.3, 0.1]} c="#92400e" />
-      <Box p={[2.6, H + 0.3, -3.5]} s={[0.5, 0.6, 0.5]} c="#92400e" />
-      <Box p={[2.6, H + 0.9, -3.5]} s={[0.1, 0.4, 0.1]} c="#fde68a" e="#fbbf24" cast={false} />
+      {/* dua tempat tidur */}
+      {[0.2, 2.6].map((bx) => (
+        <group key={bx}>
+          <Box p={[bx, H + 0.25, -2.4]} s={[1.5, 0.5, 2.7]} c="#475569" />
+          <Box p={[bx, H + 0.55, -2.4]} s={[1.4, 0.14, 2.6]} c="#f1f5f9" />
+          <Box p={[bx, H + 0.72, -3.35]} s={[0.9, 0.18, 0.5]} c="#e2e8f0" />
+          <Box p={[bx, H + 0.9, -3.9]} s={[1.6, 1.3, 0.1]} c="#92400e" />
+        </group>
+      ))}
+      <Box p={[1.4, H + 0.3, -3.5]} s={[0.4, 0.6, 0.5]} c="#92400e" />
+      <Box p={[1.4, H + 0.9, -3.5]} s={[0.1, 0.4, 0.1]} c="#fde68a" e="#fbbf24" cast={false} />
       <Label p={[1.4, H + 2.4, -2.2]}>Kamar Tidur</Label>
       {/* balkon */}
       <Box p={[6.2, H + 0.3, 5.2 - 0.9]} s={[1.6, 0.04, 1.0]} c="#0ea5e9" cast={false} />

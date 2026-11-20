@@ -12,7 +12,7 @@ type V3 = [number, number, number];
 
 export function spotFor(agent: Agent): Spot {
   // Working & Error tetap di meja lantai 1; Idle di lantai 2
-  return agent.status === "idle" ? IDLE_SPOTS[agent.idleSpot] : DESKS[agent.deskIndex];
+  return agent.status === "idle" ? IDLE_SPOTS[agent.idleIndex % IDLE_SPOTS.length] : DESKS[agent.deskIndex % DESKS.length];
 }
 
 function buildPath(from: THREE.Vector3, to: Spot): V3[] {

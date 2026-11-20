@@ -1,5 +1,5 @@
 "use client";
-import { BALCONY, BUILDING, DESKS, IDLE_SPOTS } from "@/lib/layout";
+import { BALCONY, BUILDING, DESKS } from "@/lib/layout";
 import { useMissionStore, statusLabel } from "@/store/useMissionStore";
 import { spotFor } from "./Character";
 
@@ -34,7 +34,7 @@ function Plan({ floor, title }: { floor: 1 | 2; title: string }) {
               <Zone x={-6} z={-4} w={14} d={8} label="Area Workstation" tint="bg-amber-100/50 dark:bg-amber-400/10" />
               {DESKS.map((d, i) => (
                 <div key={i} className="absolute -translate-x-1/2 rounded-md border border-slate-400/60 bg-white/70 text-center text-[9px] leading-[22px] text-slate-500 dark:bg-slate-700/60 dark:text-slate-300"
-                  style={{ left: pct(d.pos[0], BUILDING.minX, W), top: pct(d.pos[2] - 1.7, BUILDING.minZ, D), width: "12%", height: "14%" }}>
+                  style={{ left: pct(d.pos[0], BUILDING.minX, W), top: pct(d.pos[2] - 1.7, BUILDING.minZ, D), width: "12%", height: "12%" }}>
                   Meja {i + 1}
                 </div>
               ))}
@@ -70,8 +70,6 @@ function Plan({ floor, title }: { floor: 1 | 2; title: string }) {
 }
 
 export default function Overview2D() {
-  // referensi IDLE_SPOTS menjaga layout & 2D tetap sinkron
-  void IDLE_SPOTS;
   return (
     <div className="grid h-full grid-cols-1 content-start items-start gap-4 overflow-auto p-4 xl:grid-cols-2">
       <Plan floor={2} title="Lantai 2 — Lounge, Kamar Tidur & Balkon (Idle)" />

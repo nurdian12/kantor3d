@@ -23,5 +23,5 @@ npm run dev
 
 Tanpa `NEXT_PUBLIC_WS_URL`, dashboard memakai simulasi lokal. Kontrak pesan ada di `src/lib/protocol.ts`:
 server mengirim `snapshot` (saat konek), `status`, dan `log`; klien dapat mengirim `set_status`.
-Klien reconnect otomatis (exponential backoff). Agen baru dari server dipetakan ke 3 meja dan 3 spot idle yang ada
-(layout saat ini mendukung 3 agen; lebih dari itu akan berbagi meja).
+Klien reconnect otomatis (exponential backoff). Agen dari server dipetakan ke 6 meja (2 baris x 3) dan 6 spot idle (2 sofa, 2 kasur, 2 posisi balkon)
+(`CAPACITY` di `src/lib/layout.ts`); agen ke-7 dst. berbagi meja/spot. Server mock kini mengirim 6 agen.

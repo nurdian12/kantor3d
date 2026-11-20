@@ -1,4 +1,4 @@
-import type { IdleSpotId, Pose } from "./types";
+import type { Pose } from "./types";
 
 /** Koordinat dunia (x, z). Lantai 1 y=0, lantai 2 y=FLOOR_H. */
 export const FLOOR_H = 4;
@@ -14,18 +14,28 @@ export interface Spot {
   label: string;
 }
 
-/** 3 workstation di lantai 1 (menghadap -z / dinding belakang). */
-export const DESKS: Spot[] = [
-  { pos: [-3.5, 0, -1.3], rotY: Math.PI, pose: "sit", floor: 1, label: "Workstation 1" },
-  { pos: [0.5, 0, -1.3], rotY: Math.PI, pose: "sit", floor: 1, label: "Workstation 2" },
-  { pos: [4.5, 0, -1.3], rotY: Math.PI, pose: "sit", floor: 1, label: "Workstation 3" },
+/** 6 workstation di lantai 1 (2 baris x 3 kolom, menghadap -z / dinding belakang). */
+const DESK_COLS = [-3.5, 0.5, 4.5];
+const DESK_ROWS = [-1.3, 2.0];
+export const DESKS: Spot[] = DESK_ROWS.flatMap((z, r) =>
+  DESK_COLS.map((x, c): Spot => ({ pos: [x, 0, z], rotY: Math.PI, pose: "sit", floor: 1, label: `Workstation ${r * 3 + c + 1}` })),
+);
+
+/**
+ * 6 spot istirahat di lantai 2. Urutan diselang-seling (lounge, kamar, balkon, ...)
+ * agar 3 agen pertama tersebar di tiga area.
+ */
+export const IDLE_SPOTS: Spot[] = [
+  { pos: [-4.2, FLOOR_H, -3.2], rotY: 0, pose: "sit", floor: 2, label: "Lounge" },
+  { pos: [0.2, FLOOR_H, -1.7], rotY: 0, pose: "lie", floor: 2, label: "Kamar Tidur" },
+  { pos: [5.4, FLOOR_H, 5.2], rotY: 0, pose: "stand", floor: 2, label: "Balkon" },
+  { pos: [-2.6, FLOOR_H, -3.2], rotY: 0, pose: "sit", floor: 2, label: "Lounge" },
+  { pos: [2.6, FLOOR_H, -1.7], rotY: 0, pose: "lie", floor: 2, label: "Kamar Tidur" },
+  { pos: [6.8, FLOOR_H, 5.2], rotY: 0, pose: "stand", floor: 2, label: "Balkon" },
 ];
 
-export const IDLE_SPOTS: Record<IdleSpotId, Spot> = {
-  lounge: { pos: [-3.4, FLOOR_H, -3.2], rotY: 0, pose: "sit", floor: 2, label: "Lounge" },
-  bedroom: { pos: [1.4, FLOOR_H, -1.7], rotY: 0, pose: "lie", floor: 2, label: "Kamar Tidur" },
-  balcony: { pos: [6, FLOOR_H, 5.2], rotY: 0, pose: "stand", floor: 2, label: "Balkon" },
-};
+/** Kapasitas layout: agen ke-N memakai meja/spot (N mod kapasitas) */
+export const CAPACITY = Math.min(DESKS.length, IDLE_SPOTS.length);
 
 /** Tangga di sisi kiri: bawah (lantai 1) -> atas (lantai 2) */
 export const STAIRS = {

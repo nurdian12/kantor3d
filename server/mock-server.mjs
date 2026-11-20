@@ -6,6 +6,9 @@ const agents = [
   { id: "lead", name: "Lead Agent", role: "Orkestrator", status: "working", task: "Mengoordinasi sprint" },
   { id: "engineer", name: "Lead Engineer", role: "Engineering", status: "working", task: "Refactor modul auth" },
   { id: "researcher", name: "Content Researcher", role: "Riset Konten", status: "idle", task: "Menunggu brief" },
+  { id: "designer", name: "Product Designer", role: "Desain", status: "working", task: "Membuat wireframe dashboard" },
+  { id: "qa", name: "QA Engineer", role: "Quality", status: "idle", task: "Menunggu build baru" },
+  { id: "analyst", name: "Data Analyst", role: "Analitik", status: "working", task: "Menyusun laporan metrik" },
 ];
 const logs = [];
 let seq = 0;
