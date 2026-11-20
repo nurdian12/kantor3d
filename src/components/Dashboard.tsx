@@ -1,7 +1,20 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useEffect } from "react";
-import { useMissionStore } from "@/store/useMissionStore";
+import { useMissionStore, type Tab } from "@/store/useMissionStore";
+import { useWorkStore } from "@/store/useWorkStore";
+import { randomSysLine } from "@/lib/mockData";
+import TasksView from "./views/TasksView";
+import CalendarView from "./views/CalendarView";
+import UsageView from "./views/UsageView";
+import MemoryView from "./views/MemoryView";
+import FilesView from "./views/FilesView";
+import LogsView from "./views/LogsView";
+
+const TABS: ReadonlyArray<readonly [Tab, string, string]> = [
+  ["office", "🏢", "Kantor"], ["tasks", "📋", "Tugas"], ["calendar", "🗓️", "Kalender"], ["usage", "📈", "Token"],
+  ["memory", "🧠", "Memori"], ["files", "📁", "File"], ["logs", "🖥️", "Log"],
+];
 import QuickPanel from "./QuickPanel";
 import Overview2D from "./Overview2D";
 import type { AgentStatus } from "@/lib/types";
@@ -10,7 +23,7 @@ import { useAgentSocket } from "@/lib/useAgentSocket";
 const Scene3D = dynamic(() => import("./Scene3D"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-slate-500">Memuat kantor 3D…</div> });
 
 export default function Dashboard() {
-  const { viewMode, setViewMode, theme, setTheme, simulate, connection, focus, setFocus, selectedId, follow, setFollow, agents, select, authenticated } = useMissionStore();
+  const { viewMode, setViewMode, theme, setTheme, simulate, connection, focus, setFocus, selectedId, follow, setFollow, agents, select, authenticated, tab, setTab } = useMissionStore();
   const selected = agents.find((a) => a.id === selectedId);
   useAgentSocket();
 
@@ -41,6 +54,25 @@ export default function Dashboard() {
     return () => clearInterval(id);
   }, [simulate, connection]);
 
+  // Umpan log sistem: (1) cerminkan log aktivitas agen (real-time dari WebSocket bila terhubung),
+  // (2) tanpa WebSocket, hasilkan baris sistem simulasi agar terminal tetap hidup.
+  useEffect(() => {
+    const { pushSys } = useWorkStore.getState();
+    pushSys("info", "ws-server", "Mission Control dimulai");
+    return useMissionStore.subscribe((s, prev) => {
+      const l = s.logs[0];
+      if (l && l !== prev.logs[0]) pushSys(l.level === "warn" ? "warn" : l.level, "agent", `[${l.agentId}] ${l.message}`);
+      if (s.connection !== prev.connection) pushSys(s.connection === "live" ? "info" : "warn", "ws-server", `koneksi WebSocket: ${s.connection}`);
+    });
+  }, []);
+  useEffect(() => {
+    if (connection === "live") return;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => { const l = randomSysLine(); useWorkStore.getState().pushSys(l.level, l.source, l.message); timer = setTimeout(tick, 1200 + Math.random() * 2300); };
+    timer = setTimeout(tick, 800);
+    return () => clearTimeout(timer);
+  }, [connection]);
+
   const btn = (active: boolean) =>
     `rounded-lg px-3 py-1.5 text-sm font-medium transition ${active ? "bg-indigo-600 text-white shadow" : "text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700"}`;
 
@@ -52,10 +84,10 @@ export default function Dashboard() {
           <p className="text-xs text-slate-500">Kantor virtual 2 lantai · {connection === "live" ? "data real-time (WebSocket)" : connection === "connecting" ? "menghubungkan…" : "data mock"}</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="group" aria-label="Mode tampilan">
+          {tab === "office" && <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="group" aria-label="Mode tampilan">
             <button className={btn(viewMode === "3d")} onClick={() => setViewMode("3d")}>3D View</button>
             <button className={btn(viewMode === "2d")} onClick={() => setViewMode("2d")}>2D Overview</button>
-          </div>
+          </div>}
           {authenticated && (
             <button onClick={async () => { await fetch("/api/logout", { method: "POST" }); window.location.href = "/login"; }}
               className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-medium hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Keluar</button>
@@ -66,9 +98,18 @@ export default function Dashboard() {
           </button>
         </div>
       </header>
-      <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
+      <nav aria-label="Navigasi utama" className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white/60 px-4 py-2 dark:border-slate-700 dark:bg-slate-900/60">
+        {TABS.map(([k, icon, text]) => (
+          <button key={k} onClick={() => setTab(k)} aria-current={tab === k ? "page" : undefined}
+            className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${tab === k ? "bg-indigo-600 text-white shadow" : "text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+            <span aria-hidden>{icon}</span>{text}
+          </button>
+        ))}
+      </nav>
+      {/* Kantor 3D tetap ter-mount (disembunyikan) agar state kamera/karakter tidak hilang saat pindah tab */}
+      <main className={tab === "office" ? "flex min-h-0 flex-1 flex-col lg:flex-row" : "hidden"}>
         <section className="relative min-h-[50vh] flex-1 overflow-hidden">
-          <div className={viewMode === "3d" ? "h-full w-full" : "hidden"}><Scene3D active={viewMode === "3d"} /></div>
+          <div className={viewMode === "3d" ? "h-full w-full" : "hidden"}><Scene3D active={tab === "office" && viewMode === "3d"} /></div>
           {viewMode === "2d" && <Overview2D />}
           {viewMode === "3d" && (
             <div className="absolute left-4 top-4 flex rounded-xl bg-white/80 p-1 shadow backdrop-blur dark:bg-slate-900/80" role="group" aria-label="Fokus lantai">
@@ -91,6 +132,16 @@ export default function Dashboard() {
         </section>
         <div className="max-h-[50vh] lg:max-h-none"><QuickPanel /></div>
       </main>
+      {tab !== "office" && (
+        <main className="min-h-0 flex-1 overflow-hidden">
+          {tab === "tasks" && <TasksView />}
+          {tab === "calendar" && <CalendarView />}
+          {tab === "usage" && <UsageView />}
+          {tab === "memory" && <MemoryView />}
+          {tab === "files" && <FilesView />}
+          {tab === "logs" && <LogsView />}
+        </main>
+      )}
     </div>
   );
 }

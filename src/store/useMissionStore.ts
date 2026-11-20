@@ -5,6 +5,7 @@ import type { RemoteAgent, RemoteLog } from "@/lib/protocol";
 
 export type ViewMode = "3d" | "2d";
 export type Theme = "light" | "dark";
+export type Tab = "office" | "tasks" | "calendar" | "usage" | "memory" | "files" | "logs";
 export type Focus = "all" | "1" | "2";
 export type Connection = "offline" | "connecting" | "live";
 
@@ -55,6 +56,8 @@ interface MissionState {
   theme: Theme;
   simulate: boolean;
   connection: Connection;
+  tab: Tab;
+  setTab: (t: Tab) => void;
   authenticated: boolean;
   setAuthenticated: (v: boolean) => void;
   focus: Focus;
@@ -87,6 +90,8 @@ export const useMissionStore = create<MissionState>((set, get) => ({
   connection: "offline",
   authenticated: false,
   setAuthenticated: (authenticated) => set({ authenticated }),
+  tab: "office",
+  setTab: (tab) => set({ tab }),
   focus: "all",
   follow: true,
   setFollow: (follow) => set({ follow }),

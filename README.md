@@ -44,3 +44,21 @@ Opsional; aktif bila `AUTH_SECRET` **dan** `DASHBOARD_PASSWORD` diisi (lihat `.e
 
 Catatan produksi: gunakan HTTPS/`wss://` (tiket ada di query string), jalankan server WS dengan `AUTH_SECRET` yang sama, dan set env saat **build dan runtime**.
 Batasan: pembatas login & daftar tiket terpakai berada di memori satu proses (gunakan Redis bila multi-instance); satu password untuk semua pengguna, belum ada peran viewer/operator.
+
+## Manajemen kerja & monitoring
+Navigasi tab di bawah header (data **mock**; kantor 3D tetap ter-mount saat berpindah tab):
+
+| Tab | Isi | Kode |
+|---|---|---|
+| Tugas | Kanban To Do / In Progress / Ready / Done: drag & drop (atau tombol ← →), filter agen, tambah/hapus tugas | `views/TasksView.tsx` |
+| Kalender | Kalender bulanan jadwal cron semua agen, detail per hari (terjadwal/berhasil/gagal), daftar job + saklar aktif, eksekusi berikutnya | `views/CalendarView.tsx`, `lib/cron.ts` |
+| Token | Statistik + grafik batang bertumpuk per agen, rentang 24 jam / 7 hari / 30 hari, bandingkan dengan periode sebelumnya, rincian per agen, tampilan tabel | `views/UsageView.tsx` |
+| Memori | Daftar memori per agen (fakta/preferensi/konteks/pembelajaran), pencarian, anggaran token, tambah/hapus | `views/MemoryView.tsx` |
+| File | File explorer output agen + pratinjau & unduh | `views/FilesView.tsx` |
+| Log | Terminal log real-time: filter level/sumber, cari, jeda, unduh, bersihkan | `views/LogsView.tsx` |
+
+- Cron mendukung 5 field (`*`, `a-b`, `a,b`, `*/n`); aturan tanggal-ATAU-hari-minggu standar cron berlaku.
+- Warna grafik mengikuti agen (bukan peringkat) dan sudah divalidasi untuk mode terang & gelap (varian gelap di `lib/agentsMeta.ts`).
+- Log sistem mencerminkan log aktivitas agen dari WebSocket; tanpa WebSocket, baris sistem disimulasikan.
+- Biaya token memakai asumsi $3 / $15 per 1M token (input / output) — ubah `PRICE_IN`/`PRICE_OUT` di `UsageView.tsx`.
+- Data masih di memori browser (hilang saat reload). Untuk data nyata, ganti `lib/mockData.ts` dan `useWorkStore` dengan sumber server; protokol WebSocket belum memuat tugas/token/memori.
