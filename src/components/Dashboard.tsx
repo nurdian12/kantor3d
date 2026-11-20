@@ -5,11 +5,13 @@ import { useMissionStore } from "@/store/useMissionStore";
 import QuickPanel from "./QuickPanel";
 import Overview2D from "./Overview2D";
 import type { AgentStatus } from "@/lib/types";
+import { useAgentSocket } from "@/lib/useAgentSocket";
 
 const Scene3D = dynamic(() => import("./Scene3D"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-slate-500">Memuat kantor 3D…</div> });
 
 export default function Dashboard() {
-  const { viewMode, setViewMode, theme, setTheme, simulate } = useMissionStore();
+  const { viewMode, setViewMode, theme, setTheme, simulate, connection } = useMissionStore();
+  useAgentSocket();
 
   // Tema: baca preferensi tersimpan, sinkronkan ke <html class="dark">
   useEffect(() => {
@@ -26,7 +28,7 @@ export default function Dashboard() {
 
   // Simulasi real-time (mock): status agen berubah acak tiap beberapa detik
   useEffect(() => {
-    if (!simulate) return;
+    if (!simulate || connection !== "offline") return;
     const id = setInterval(() => {
       const { agents, setStatus, addLog } = useMissionStore.getState();
       const a = agents[Math.floor(Math.random() * agents.length)];
@@ -36,7 +38,7 @@ export default function Dashboard() {
       setStatus(a.id, next);
     }, 6000);
     return () => clearInterval(id);
-  }, [simulate]);
+  }, [simulate, connection]);
 
   const btn = (active: boolean) =>
     `rounded-lg px-3 py-1.5 text-sm font-medium transition ${active ? "bg-indigo-600 text-white shadow" : "text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700"}`;
@@ -46,7 +48,7 @@ export default function Dashboard() {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white/80 px-5 py-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/80">
         <div>
           <h1 className="text-lg font-bold tracking-tight">🛰️ AI Agent Mission Control</h1>
-          <p className="text-xs text-slate-500">Kantor virtual 2 lantai · data mock</p>
+          <p className="text-xs text-slate-500">Kantor virtual 2 lantai · {connection === "live" ? "data real-time (WebSocket)" : connection === "connecting" ? "menghubungkan…" : "data mock"}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="group" aria-label="Mode tampilan">

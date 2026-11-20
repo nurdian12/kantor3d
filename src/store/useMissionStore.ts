@@ -1,8 +1,28 @@
 import { create } from "zustand";
-import type { Agent, AgentStatus, LogEntry } from "@/lib/types";
+import type { Agent, AgentStatus, IdleSpotId, LogEntry } from "@/lib/types";
+import type { RemoteAgent, RemoteLog } from "@/lib/protocol";
 
 export type ViewMode = "3d" | "2d";
 export type Theme = "light" | "dark";
+export type Connection = "offline" | "connecting" | "live";
+
+const SPOTS: IdleSpotId[] = ["lounge", "bedroom", "balcony"];
+const PALETTE = ["#6366f1", "#10b981", "#f59e0b", "#ec4899", "#06b6d4", "#8b5cf6"];
+
+/** Ubah agen dari server menjadi Agent lokal (warna/meja/spot idle dipertahankan bila agen sudah dikenal) */
+function toAgent(r: RemoteAgent, i: number, prev?: Agent): Agent {
+  return {
+    id: r.id,
+    name: r.name,
+    role: r.role ?? prev?.role ?? "Agent",
+    color: prev?.color ?? PALETTE[i % PALETTE.length],
+    status: r.status,
+    task: r.task ?? prev?.task ?? "",
+    idleSpot: prev?.idleSpot ?? SPOTS[i % SPOTS.length],
+    deskIndex: prev?.deskIndex ?? i % 3, // layout saat ini punya 3 meja
+  };
+}
+const toLog = (l: RemoteLog): LogEntry => ({ id: l.id ?? ++logSeq, agentId: l.agentId, time: l.time ?? Date.now(), level: l.level ?? "info", message: l.message });
 
 const now = Date.now();
 
@@ -33,6 +53,7 @@ interface MissionState {
   viewMode: ViewMode;
   theme: Theme;
   simulate: boolean;
+  connection: Connection;
   selectedId: string | null;
   setStatus: (id: string, status: AgentStatus) => void;
   cycleStatus: (id: string) => void;
@@ -40,6 +61,10 @@ interface MissionState {
   setViewMode: (m: ViewMode) => void;
   setTheme: (t: Theme) => void;
   toggleSimulate: () => void;
+  setConnection: (c: Connection) => void;
+  applySnapshot: (agents: RemoteAgent[], logs?: RemoteLog[]) => void;
+  applyStatus: (agentId: string, status: AgentStatus, task?: string) => void;
+  applyLog: (log: RemoteLog) => void;
   select: (id: string | null) => void;
 }
 
@@ -52,6 +77,7 @@ export const useMissionStore = create<MissionState>((set, get) => ({
   viewMode: "3d",
   theme: "dark",
   simulate: true,
+  connection: "offline",
   selectedId: null,
 
   setStatus: (id, status) => {
@@ -81,4 +107,13 @@ export const useMissionStore = create<MissionState>((set, get) => ({
   setTheme: (theme) => set({ theme }),
   toggleSimulate: () => set((s) => ({ simulate: !s.simulate })),
   select: (selectedId) => set({ selectedId }),
+  setConnection: (connection) => set({ connection }),
+  applySnapshot: (agents, logs) =>
+    set((s) => ({
+      agents: agents.map((r, i) => toAgent(r, i, s.agents.find((a) => a.id === r.id))),
+      logs: logs ? logs.map(toLog).sort((a, b) => b.time - a.time).slice(0, MAX_LOGS) : s.logs,
+    })),
+  applyStatus: (agentId, status, task) =>
+    set((s) => ({ agents: s.agents.map((a) => (a.id === agentId ? { ...a, status, task: task ?? a.task } : a)) })),
+  applyLog: (log) => set((s) => ({ logs: [toLog(log), ...s.logs].slice(0, MAX_LOGS) })),
 }));
