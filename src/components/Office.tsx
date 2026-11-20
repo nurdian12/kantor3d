@@ -80,11 +80,13 @@ export function Office({ theme }: { theme: Theme }) {
   const wallSide = dark ? "#4a5a8a" : "#e2e8f0";
   const desk = dark ? "#8a6a45" : "#c89b6a";
   const H = FLOOR_H;
+  const showF2 = useMissionStore((s) => s.focus !== "1");
 
   return (
     <group>
       {/* slab lantai */}
       <Box p={[0, -0.15, 0]} s={[16.4, 0.3, 8.4]} c={floor1} />
+      {showF2 && <group>
       <Box p={[1, H - 0.15, 0]} s={[14, 0.3, 8]} c={floor2} />
       <Box p={[-7, H - 0.15, -3]} s={[2, 0.3, 2]} c={floor2} />
       {/* dek balkon */}
@@ -97,6 +99,8 @@ export function Office({ theme }: { theme: Theme }) {
       <Box p={[8, H + 0.25, 1]} s={[0.03, 0.03, 10]} c="#94a3b8" cast={false} />
       <Plant p={[7.4, H, 4.5]} />
       <Plant p={[4.8, H, 4.5]} />
+
+      </group>}
 
       {/* dinding belakang, kiri, kanan (cutaway: depan terbuka) */}
       <Box p={[0, H, -4.1]} s={[16.4, H * 2, 0.2]} c={wall} />
@@ -120,6 +124,7 @@ export function Office({ theme }: { theme: Theme }) {
       <Label p={[0, 0.5, 4.7]}>Lantai 1 · Workstation</Label>
       <Stairs />
 
+      {showF2 && <group>
       {/* ===== LANTAI 2 ===== */}
       <Label p={[-1.5, H + 0.5, 4.4]}>Lantai 2 · Lounge / Kamar / Balkon</Label>
       {/* lounge */}
@@ -152,6 +157,8 @@ export function Office({ theme }: { theme: Theme }) {
       {/* balkon */}
       <Box p={[6.2, H + 0.3, 5.2 - 0.9]} s={[1.6, 0.04, 1.0]} c="#0ea5e9" cast={false} />
       <Label p={[6.1, H + 2.0, 4.6]}>Balkon</Label>
+
+      </group>}
 
       {/* pencahayaan interior */}
       <pointLight position={[-3.4, H + 2.5, -1]} intensity={dark ? 14 : 3} color="#fbbf24" distance={7} />

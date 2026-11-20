@@ -25,3 +25,7 @@ Tanpa `NEXT_PUBLIC_WS_URL`, dashboard memakai simulasi lokal. Kontrak pesan ada 
 server mengirim `snapshot` (saat konek), `status`, dan `log`; klien dapat mengirim `set_status`.
 Klien reconnect otomatis (exponential backoff). Agen dari server dipetakan ke 6 meja (2 baris x 3) dan 6 spot idle (2 sofa, 2 kasur, 2 posisi balkon)
 (`CAPACITY` di `src/lib/layout.ts`); agen ke-7 dst. berbagi meja/spot. Server mock kini mengirim 6 agen.
+
+## Fokus kamera
+Tombol **Semua / Lantai 1 / Lantai 2** di pojok kiri atas tampilan 3D menganimasikan kamera ke preset (`PRESETS` di `Scene3D.tsx`).
+Fokus Lantai 1 menyembunyikan lantai 2 dan karakter di dalamnya agar kedua baris meja terlihat penuh dari atas.

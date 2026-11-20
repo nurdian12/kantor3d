@@ -5,6 +5,7 @@ import type { RemoteAgent, RemoteLog } from "@/lib/protocol";
 
 export type ViewMode = "3d" | "2d";
 export type Theme = "light" | "dark";
+export type Focus = "all" | "1" | "2";
 export type Connection = "offline" | "connecting" | "live";
 
 const PALETTE = ["#6366f1", "#10b981", "#f59e0b", "#ec4899", "#06b6d4", "#8b5cf6"];
@@ -54,6 +55,8 @@ interface MissionState {
   theme: Theme;
   simulate: boolean;
   connection: Connection;
+  focus: Focus;
+  setFocus: (f: Focus) => void;
   selectedId: string | null;
   setStatus: (id: string, status: AgentStatus) => void;
   cycleStatus: (id: string) => void;
@@ -78,6 +81,8 @@ export const useMissionStore = create<MissionState>((set, get) => ({
   theme: "dark",
   simulate: true,
   connection: "offline",
+  focus: "all",
+  setFocus: (focus) => set({ focus }),
   selectedId: null,
 
   setStatus: (id, status) => {

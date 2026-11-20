@@ -1,11 +1,41 @@
 "use client";
-import { Canvas } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Office } from "./Office";
 import { Character } from "./Character";
-import { useMissionStore } from "@/store/useMissionStore";
+import { useMissionStore, type Focus } from "@/store/useMissionStore";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+
+const PRESETS: Record<Focus, { pos: [number, number, number]; target: [number, number, number] }> = {
+  all: { pos: [8, 6, 19], target: [0, 3.2, 0] },
+  // Lantai 1: dari atas-depan agar kedua baris meja terlihat (lantai 2 disembunyikan)
+  "1": { pos: [0, 14.5, 12.5], target: [0, 0.2, 0.4] },
+  "2": { pos: [1.5, 10, 21], target: [1, 4, 1] },
+};
+
+/** Animasi halus kamera ke preset saat fokus berubah; setelah itu kontrol bebas kembali ke pengguna */
+function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl | null> }) {
+  const focus = useMissionStore((s) => s.focus);
+  const anim = useRef({ t: 1, from: new THREE.Vector3(), fromT: new THREE.Vector3(), first: true });
+  useEffect(() => { anim.current.t = 0; anim.current.first = true; }, [focus]);
+  useFrame(({ camera }, dt) => {
+    const a = anim.current, c = controls.current;
+    if (!c || a.t >= 1) return;
+    if (a.first) { a.from.copy(camera.position); a.fromT.copy(c.target); a.first = false; }
+    a.t = Math.min(1, a.t + dt / 1.1);
+    const k = 1 - Math.pow(1 - a.t, 3);
+    const p = PRESETS[focus];
+    camera.position.lerpVectors(a.from, new THREE.Vector3(...p.pos), k);
+    c.target.lerpVectors(a.fromT, new THREE.Vector3(...p.target), k);
+    c.update();
+  });
+  return null;
+}
 
 export default function Scene3D({ active = true }: { active?: boolean }) {
+  const controls = useRef<OrbitControlsImpl>(null);
   const agents = useMissionStore((s) => s.agents);
   const theme = useMissionStore((s) => s.theme);
   const select = useMissionStore((s) => s.select);
@@ -23,7 +53,8 @@ export default function Scene3D({ active = true }: { active?: boolean }) {
       </mesh>
       <Office theme={theme} />
       {agents.map((a) => <Character key={a.id} agent={a} />)}
-      <OrbitControls target={[0, 3.2, 0]} maxPolarAngle={Math.PI / 2.1} minDistance={8} maxDistance={45} enablePan />
+      <CameraRig controls={controls} />
+      <OrbitControls ref={controls} target={[0, 3.2, 0]} maxPolarAngle={Math.PI / 2.1} minDistance={8} maxDistance={45} enablePan />
     </Canvas>
   );
 }

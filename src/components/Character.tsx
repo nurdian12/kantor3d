@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
@@ -45,6 +45,7 @@ export function Character({ agent }: { agent: Agent }) {
   const armR = useRef<THREE.Group>(null);
   const ring = useRef<THREE.Mesh>(null);
   const select = useMissionStore((s) => s.select);
+  const [tagShown, setTagShown] = useState(true);
   const selected = useMissionStore((s) => s.selectedId === agent.id);
 
   const spot = spotFor(agent);
@@ -107,6 +108,12 @@ export function Character({ agent }: { agent: Agent }) {
       s.poseBlend = Math.min(1, s.poseBlend + dt * 3);
     }
 
+    // fokus lantai: sembunyikan karakter di lantai yang tidak difokuskan
+    const focus = useMissionStore.getState().focus;
+    const show = focus === "all" || (focus === "1") === (g.position.y < FLOOR_H / 2);
+    g.visible = show;
+    if (show !== tagShown) setTagShown(show); // Html drei tidak mengikuti visible induk
+
     // animasi pose
     const b = body.current!;
     const pb = s.walking ? 0 : s.poseBlend;
@@ -164,14 +171,14 @@ export function Character({ agent }: { agent: Agent }) {
         <Limb refObj={armL} len={0.62} w={0.12} color={agent.color} pos={[-0.3, 1.27, 0]} />
         <Limb refObj={armR} len={0.62} w={0.12} color={agent.color} pos={[0.3, 1.27, 0]} />
       </group>
-      <Html position={[0, 2.25, 0]} center distanceFactor={11} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
+      {tagShown && <Html position={[0, 2.25, 0]} center distanceFactor={11} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
         <div className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/20 bg-slate-900/85 px-2.5 py-1 text-[11px] font-medium text-white shadow-lg backdrop-blur">
           <span className="inline-block h-2 w-2 rounded-full" style={{ background: sc, boxShadow: `0 0 8px ${sc}` }} />
           {agent.name}
           <span className="opacity-60">· {statusLabel(agent.status)}</span>
           {agent.status === "error" && <span className="font-bold text-red-400">⚠</span>}
         </div>
-      </Html>
+      </Html>}
     </group>
   );
 }

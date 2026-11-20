@@ -10,7 +10,7 @@ import { useAgentSocket } from "@/lib/useAgentSocket";
 const Scene3D = dynamic(() => import("./Scene3D"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-slate-500">Memuat kantor 3D…</div> });
 
 export default function Dashboard() {
-  const { viewMode, setViewMode, theme, setTheme, simulate, connection } = useMissionStore();
+  const { viewMode, setViewMode, theme, setTheme, simulate, connection, focus, setFocus } = useMissionStore();
   useAgentSocket();
 
   // Tema: baca preferensi tersimpan, sinkronkan ke <html class="dark">
@@ -65,6 +65,13 @@ export default function Dashboard() {
         <section className="relative min-h-[50vh] flex-1 overflow-hidden">
           <div className={viewMode === "3d" ? "h-full w-full" : "hidden"}><Scene3D active={viewMode === "3d"} /></div>
           {viewMode === "2d" && <Overview2D />}
+          {viewMode === "3d" && (
+            <div className="absolute left-4 top-4 flex rounded-xl bg-white/80 p-1 shadow backdrop-blur dark:bg-slate-900/80" role="group" aria-label="Fokus lantai">
+              {([["all", "Semua"], ["1", "Lantai 1"], ["2", "Lantai 2"]] as const).map(([k, label]) => (
+                <button key={k} onClick={() => setFocus(k)} className={btn(focus === k)}>{label}</button>
+              ))}
+            </div>
+          )}
           {viewMode === "3d" && <p className="pointer-events-none absolute bottom-3 left-4 rounded-md bg-slate-900/60 px-2 py-1 text-[11px] text-white">Drag: putar · Scroll: zoom · Klik karakter untuk filter log</p>}
         </section>
         <div className="max-h-[50vh] lg:max-h-none"><QuickPanel /></div>
