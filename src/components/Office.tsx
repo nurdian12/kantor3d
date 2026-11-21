@@ -3,6 +3,7 @@ import { Html } from "@react-three/drei";
 import { BALCONY, DESKS, FLOOR_H, STAIRS } from "@/lib/layout";
 import type { Theme } from "@/store/useMissionStore";
 import { useMissionStore } from "@/store/useMissionStore";
+import { QUALITY } from "@/lib/quality";
 
 type V3 = [number, number, number];
 
@@ -81,6 +82,7 @@ export function Office({ theme }: { theme: Theme }) {
   const desk = dark ? "#8a6a45" : "#c89b6a";
   const H = FLOOR_H;
   const showF2 = useMissionStore((s) => s.focus !== "1");
+  const pointLights = useMissionStore((s) => QUALITY[s.quality].pointLights);
 
   return (
     <group>
@@ -161,9 +163,13 @@ export function Office({ theme }: { theme: Theme }) {
       </group>}
 
       {/* pencahayaan interior */}
+      {pointLights && (
+        <>
       <pointLight position={[-3.4, H + 2.5, -1]} intensity={dark ? 14 : 3} color="#fbbf24" distance={7} />
       <pointLight position={[1.4, H + 2.5, -2]} intensity={dark ? 10 : 2} color="#fda4af" distance={6} />
       <pointLight position={[0, 3.4, 0]} intensity={dark ? 18 : 4} color="#e0f2fe" distance={12} />
+        </>
+      )}
     </group>
   );
 }

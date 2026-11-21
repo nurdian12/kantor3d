@@ -45,6 +45,7 @@ export function useAgentSocket(url: string = WS_URL) {
         if (!m) return;
         if (m.type === "snapshot") st().applySnapshot(m.agents, m.logs);
         else if (m.type === "status") st().applyStatus(m.agentId, m.status, m.task);
+        else if (m.type === "usage") st().applyUsage(m.records);
         else st().applyLog(m.log);
       };
       ws.onclose = () => {

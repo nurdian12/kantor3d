@@ -1,12 +1,13 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Office } from "./Office";
 import { Character, agentObjects } from "./Character";
 import { FLOOR_H } from "@/lib/layout";
 import { useMissionStore, type Focus } from "@/store/useMissionStore";
+import { DOWNGRADE_BELOW, QUALITY, QUALITY_ORDER } from "@/lib/quality";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 const PRESETS: Record<Focus, { pos: [number, number, number]; target: [number, number, number] }> = {
@@ -67,18 +68,70 @@ function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl |
   return null;
 }
 
+/** Batasi FPS: di mode "demand" render hanya dipicu ticker ini (dan oleh OrbitControls saat digeser) */
+function FrameLimiter({ fps }: { fps: number }) {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    const id = setInterval(invalidate, 1000 / fps);
+    return () => clearInterval(id);
+  }, [fps, invalidate]);
+  return null;
+}
+
+/** Ukur FPS nyata; bila rendah turunkan kualitas satu tingkat (sekali per jendela 3 detik) */
+function FpsGuard() {
+  const setFps = useMissionStore((s) => s.setFps);
+  const st = useRef({ frames: 0, start: performance.now(), hidden: false, warm: 0 });
+  useEffect(() => {
+    const onVis = () => { st.current.hidden = true; st.current.start = performance.now(); st.current.frames = 0; };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+  useFrame(() => {
+    const s = st.current;
+    s.frames++;
+    const now = performance.now();
+    if (now - s.start < 3000) return;
+    const fps = (s.frames * 1000) / (now - s.start);
+    const skip = s.hidden || document.hidden;
+    s.frames = 0; s.start = now; s.hidden = false; s.warm++;
+    if (skip) return;
+    setFps(Math.round(fps));
+    const m = useMissionStore.getState();
+    // jendela pertama = pemanasan (kompilasi shader), diabaikan
+    if (s.warm < 2 || !m.autoQuality) return;
+    const i = QUALITY_ORDER.indexOf(m.quality);
+    if (fps < DOWNGRADE_BELOW[m.quality] && i < QUALITY_ORDER.length - 1) {
+      const next = QUALITY_ORDER[i + 1];
+      m.setQuality(next, true, `Kualitas diturunkan otomatis ke "${QUALITY[next].label}" (FPS ${Math.round(fps)})`);
+    }
+  });
+  return null;
+}
+
 export default function Scene3D({ active = true }: { active?: boolean }) {
   const controls = useRef<OrbitControlsImpl>(null);
   const agents = useMissionStore((s) => s.agents);
   const theme = useMissionStore((s) => s.theme);
   const select = useMissionStore((s) => s.select);
+  const quality = useMissionStore((s) => s.quality);
+  const q = QUALITY[quality];
+  const [antialias] = useState(() => q.antialias); // nilai awal saja
+  const light = useRef<THREE.DirectionalLight>(null);
+  // ukuran shadow-map berubah -> buang peta lama agar dibuat ulang dengan ukuran baru
+  useEffect(() => { const sh = light.current?.shadow; if (sh?.map) { sh.map.dispose(); sh.map = null; } }, [q.shadowMap, q.shadows]);
   const dark = theme === "dark";
   return (
-    <Canvas frameloop={active ? "always" : "never"} shadows camera={{ position: [8, 6, 19], fov: 42 }} onPointerMissed={() => select(null)} dpr={[1, 2]}>
+    // Canvas TIDAK dibuat ulang saat kualitas berubah (teardown label Html drei memicu error removeChild).
+    // Antialias hanya bisa ditentukan saat dibuat, jadi dipakai nilai awal; dpr/bayangan/FPS/lampu berubah langsung.
+    <Canvas frameloop={!active ? "never" : q.fps ? "demand" : "always"} shadows={q.shadows} camera={{ position: [8, 6, 19], fov: 42 }}
+      onPointerMissed={() => select(null)} dpr={q.dpr} gl={{ antialias, powerPreference: "high-performance" }}>
+      {active && q.fps > 0 && <FrameLimiter fps={q.fps} />}
+      {active && <FpsGuard />}
       <color attach="background" args={[dark ? "#121a33" : "#e8eef7"]} />
       <fog attach="fog" args={[dark ? "#121a33" : "#e8eef7", 40, 80]} />
       <ambientLight intensity={dark ? 1.1 : 1.1} />
-      <directionalLight position={[10, 18, 14]} intensity={dark ? 1.3 : 1.7} castShadow shadow-mapSize={[2048, 2048]}
+      <directionalLight ref={light} position={[10, 18, 14]} intensity={dark ? 1.3 : 1.7} castShadow={q.shadows} shadow-mapSize={[q.shadowMap || 512, q.shadowMap || 512]}
         shadow-camera-left={-16} shadow-camera-right={16} shadow-camera-top={16} shadow-camera-bottom={-16} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.32, 0]} receiveShadow>
         <planeGeometry args={[120, 120]} />

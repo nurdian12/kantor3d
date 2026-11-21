@@ -3,7 +3,7 @@ import type { SocialSummary } from "@/lib/repliz";
 import { agentMeta } from "@/lib/agentsMeta";
 import { useMissionStore } from "@/store/useMissionStore";
 import { useWorkStore } from "@/store/useWorkStore";
-import { card } from "./ui";
+import { card, fmtTokens } from "./ui";
 
 const PLATFORM: Record<string, { icon: string; name: string }> = {
   instagram: { icon: "📸", name: "Instagram" }, youtube: { icon: "▶️", name: "YouTube" }, facebook: { icon: "👍", name: "Facebook" },
@@ -29,15 +29,16 @@ const STAGE_DOT = { working: "bg-emerald-500", idle: "bg-sky-500", error: "bg-re
 /** Alur kerja kantor: tiap tahap dipegang satu agen; angka Repliz bila tahap terkait Repliz, selain itu dari Kanban lokal */
 function WorkflowStrip({ data }: { data: SocialSummary }) {
   const agents = useMissionStore((s) => s.agents);
-  const tasks = useWorkStore((s) => s.tasks);
-  const open = (id: string) => tasks.filter((t) => t.agentId === id && t.status !== "done").length;
-  const stages: Array<{ agentId: string; stage: string; metric: string; src: "Repliz" | "Mock" }> = [
-    { agentId: "scraper", stage: "Riset", metric: `${open("scraper")} tugas aktif`, src: "Mock" },
-    { agentId: "creator", stage: "Konten", metric: `${open("creator")} draf berjalan`, src: "Mock" },
+  const stats = useWorkStore((s) => s.stats);
+  const followers = stats?.accounts.reduce((a, x) => a + (x.followers ?? 0), 0) ?? 0;
+  type Src = "Repliz" | "Belum terhubung";
+  const stages: Array<{ agentId: string; stage: string; metric: string; src: Src }> = [
+    { agentId: "scraper", stage: "Riset", metric: "research Repliz butuh upgrade plan", src: "Belum terhubung" },
+    { agentId: "creator", stage: "Konten", metric: "template/content Repliz butuh upgrade plan", src: "Belum terhubung" },
     { agentId: "scheduler", stage: "Jadwal", metric: `${data.schedule.pending} dalam antrean`, src: "Repliz" },
     { agentId: "scheduler", stage: "Publikasi", metric: `${data.schedule.success} tayang · ${data.schedule.error} gagal`, src: "Repliz" },
     { agentId: "community", stage: "Interaksi", metric: `${data.comments.total} komentar menunggu`, src: "Repliz" },
-    { agentId: "analyst", stage: "Analitik", metric: `${open("analyst")} analisis berjalan`, src: "Mock" },
+    { agentId: "analyst", stage: "Analitik", metric: stats ? `${stats.accounts.length} akun · ${fmtTokens(followers)} pengikut` : "memuat statistik…", src: "Repliz" },
   ];
   return (
     <section className={`${card} p-4`} aria-label="Alur kerja">
@@ -45,11 +46,12 @@ function WorkflowStrip({ data }: { data: SocialSummary }) {
       <ol className="grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
         {stages.map((st, i) => {
           const ag = agents.find((a) => a.id === st.agentId);
+          const off = st.src === "Belum terhubung";
           return (
-            <li key={st.stage} className="relative rounded-xl border border-slate-200 p-3 text-xs dark:border-slate-700">
-              <p className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-slate-500"><span>{i + 1}. {st.stage}</span><span className={st.src === "Repliz" ? "text-indigo-500" : "opacity-60"}>{st.src}</span></p>
+            <li key={st.stage} className={`relative rounded-xl border p-3 text-xs ${off ? "border-dashed border-slate-300 opacity-70 dark:border-slate-600" : "border-slate-200 dark:border-slate-700"}`}>
+              <p className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-slate-500"><span>{i + 1}. {st.stage}</span><span className={off ? "" : "text-indigo-500"}>{st.src}</span></p>
               <p className="mt-1 flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-100">
-                {ag && <span className={`h-2 w-2 shrink-0 rounded-full ${STAGE_DOT[ag.status]}`} title={ag.status} />}<span className="truncate">{agentMeta(st.agentId).name}</span>
+                {ag && !off && <span className={`h-2 w-2 shrink-0 rounded-full ${STAGE_DOT[ag.status]}`} title={ag.status} />}<span className="truncate">{agentMeta(st.agentId).name}</span>
               </p>
               <p className="mt-1 text-slate-600 dark:text-slate-400">{st.metric}</p>
               {i < stages.length - 1 && <span aria-hidden className="absolute -right-2 top-1/2 hidden -translate-y-1/2 text-slate-400 xl:block">→</span>}

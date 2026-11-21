@@ -45,46 +45,31 @@ Opsional; aktif bila `AUTH_SECRET` **dan** `DASHBOARD_PASSWORD` diisi (lihat `.e
 Catatan produksi: gunakan HTTPS/`wss://` (tiket ada di query string), jalankan server WS dengan `AUTH_SECRET` yang sama, dan set env saat **build dan runtime**.
 Batasan: pembatas login & daftar tiket terpakai berada di memori satu proses (gunakan Redis bila multi-instance); satu password untuk semua pengguna, belum ada peran viewer/operator.
 
-## Manajemen kerja & monitoring
-Navigasi tab di bawah header (data **mock**; kantor 3D tetap ter-mount saat berpindah tab):
+## Kantor media sosial — semua data dari Repliz
+Tim 6 agen (`src/lib/agentsMeta.ts`): **Social Manager**, **Social Scraper**, **Content Creator**, **Scheduler**, **Community Manager**, **Analyst**.
+Aplikasi **tidak memakai data contoh/mock**: setiap tampilan berasal dari Repliz (baca-saja) atau dari runtime agen lewat WebSocket, dan bila sumbernya belum ada, tampilan memberi tahu dengan jelas.
 
-| Tab | Isi | Kode |
+| Tab | Sumber nyata | Catatan |
 |---|---|---|
-| Tugas | Kanban To Do / In Progress / Ready / Done: drag & drop (atau tombol ← →), filter agen, tambah/hapus tugas | `views/TasksView.tsx` |
-| Kalender | Kalender bulanan jadwal cron semua agen, detail per hari (terjadwal/berhasil/gagal), daftar job + saklar aktif, eksekusi berikutnya | `views/CalendarView.tsx`, `lib/cron.ts` |
-| Token | Statistik + grafik batang bertumpuk per agen, rentang 24 jam / 7 hari / 30 hari, bandingkan dengan periode sebelumnya, rincian per agen, tampilan tabel | `views/UsageView.tsx` |
-| Memori | Daftar memori per agen (fakta/preferensi/konteks/pembelajaran), pencarian, anggaran token, tambah/hapus | `views/MemoryView.tsx` |
-| File | File explorer output agen + pratinjau & unduh | `views/FilesView.tsx` |
-| Log | Terminal log real-time: filter level/sumber, cari, jeda, unduh, bersihkan | `views/LogsView.tsx` |
+| Kantor | status agen dari Repliz (`lib/replizAgents.ts`) | Manager/Scheduler/Community/Analyst diturunkan dari Repliz; Scraper & Creator "belum terhubung" |
+| Tugas | kartu "Alur Repliz": posting gagal, komentar menunggu, sedang tayang, antrean, tayang 24 jam | read-only; tugas manual (tombol Tambah) hanya di browser |
+| Kalender | jadwal posting Repliz (`/api/repliz/schedule`, 6 minggu terlihat) | ringkasan status per hari, filter status & platform, detail + pesan error |
+| Analitik | statistik akun Repliz (pengikut, views/jangkauan harian) | di-cache server 10 menit |
+| Token | pesan WebSocket `usage` dari runtime agen | Repliz tidak mencatat token; kosong bila belum ada (format di tab) |
+| Memori | knowledge base Repliz | saat ini kosong di akun ini |
+| File | storage Repliz (pencarian, filter, paginasi) | thumbnail dimuat dari `storage.repliz.com` |
+| Sosial | ringkasan + strip alur kerja 6 tahap | |
+| Log | peristiwa nyata: sinkron Repliz, WebSocket, perubahan status agen | |
 
-- Cron mendukung 5 field (`*`, `a-b`, `a,b`, `*/n`); aturan tanggal-ATAU-hari-minggu standar cron berlaku.
-- Warna grafik mengikuti agen (bukan peringkat) dan sudah divalidasi untuk mode terang & gelap (varian gelap di `lib/agentsMeta.ts`).
-- Log sistem mencerminkan log aktivitas agen dari WebSocket; tanpa WebSocket, baris sistem disimulasikan.
-- Biaya token memakai asumsi $3 / $15 per 1M token (input / output) — ubah `PRICE_IN`/`PRICE_OUT` di `UsageView.tsx`.
-- Data masih di memori browser (hilang saat reload). Untuk data nyata, ganti `lib/mockData.ts` dan `useWorkStore` dengan sumber server; protokol WebSocket belum memuat tugas/token/memori.
+**Status agen dari Repliz** (polling 60 dtk; dilewati saat WebSocket `live`): Scheduler = *Error* bila ada posting gagal dalam 72 jam, *Working* bila sedang diproses/tayang <30 menit lagi; Community = *Working* selama ada komentar menunggu; Analyst = ringkasan statistik; Manager = *Working* bila ada antrean/komentar, *Error* bila sinkron Repliz gagal.
 
-## Integrasi Repliz (tab Sosial)
-Tab **Sosial** menampilkan data dari [Repliz](https://repliz.com) (platform manajemen media sosial): akun & status koneksi, jumlah posting terjadwal/diproses/berhasil/gagal, 10 posting berikutnya, posting gagal beserta pesan error, dan komentar yang menunggu balasan.
+**Keterbatasan akun Repliz saat ini** (HTTP 402 *upgrade plan*): `content`, `chat`, `template`, `automation`, `watcher`, `listener`, `report`, dan `research` TikTok/Threads. Karena itu Scraper & Creator belum bisa dihubungkan; setelah plan naik, endpoint tersebut bisa disambungkan.
 
-- **Baca-saja.** Aplikasi hanya memanggil `GET /public/*`; tidak ada posting, balas, atau hapus (`src/lib/repliz.ts` menolak path lain).
-- Dipanggil dari server lewat `/api/repliz`; kredensial (`REPLIZ_TOKEN` atau `REPLIZ_BASIC_USER`/`REPLIZ_BASIC_PASS`) hanya dibaca dari env server. Respons sengaja tidak memuat email/nama pemilik.
-- Route dilindungi middleware login bila autentikasi aktif, di-cache 30 detik, dan tab me-refresh tiap 60 detik.
-- Di jaringan yang memakai proxy keluar, jalankan Node dengan `NODE_USE_ENV_PROXY=1` (fetch bawaan Node tidak membaca `HTTPS_PROXY`).
+### Integrasi Repliz (server, baca-saja)
+- Dipanggil dari server lewat `/api/repliz/*`; kredensial (`REPLIZ_TOKEN` atau `REPLIZ_BASIC_USER`/`REPLIZ_BASIC_PASS`) hanya dari env server. Hanya `GET /public/*` yang diizinkan (`src/lib/repliz.ts`). Respons tidak memuat email/nama pemilik.
+- Route dilindungi middleware login bila autentikasi aktif; ringkasan di-cache 30 dtk, jadwal 60 dtk, statistik 10 menit.
+- Di jaringan yang memakai proxy keluar, jalankan Node dengan `NODE_USE_ENV_PROXY=1`.
 - Spesifikasi API: `https://api.repliz.com/public` (Swagger).
 
-## Kantor media sosial (Repliz sebagai alur kerja)
-Kantor ini mengelola media sosial. Tim 6 agen (`src/lib/agentsMeta.ts`): **Social Manager** (orkestrator), **Social Scraper** (riset & scraping), **Content Creator** (pembuatan konten), **Scheduler** (penjadwalan/publikasi via Repliz), **Community Manager** (komentar & chat via Repliz), **Analyst** (performa).
-
-Repliz bukan "agen", jadi kondisinya dipetakan ke alur kerja (semua **baca-saja**):
-
-| Tahap | Agen | Sumber |
-|---|---|---|
-| Riset → Konten → Analitik | Scraper, Creator, Analyst | mock (Kanban/cron/memori lokal) |
-| Jadwal → Publikasi | Scheduler | Repliz `schedule` |
-| Interaksi | Community Manager | Repliz `comment` |
-
-- **Status agen dari Repliz** (`src/lib/replizAgents.ts`, polling 60 dtk, hanya saat WebSocket tidak `live`): Scheduler = *Error* bila ada posting gagal dalam 72 jam terakhir, *Working* bila sedang diproses/tayang <30 menit lagi, selain itu *Idle*. Community Manager = *Working* selama ada komentar menunggu. Agen lain tetap disimulasikan/dari WebSocket.
-- **Kalender**: lapisan "📣 Posting Repliz" (rentang 6 minggu terlihat, `/api/repliz/schedule`, maks. 600 posting) menampilkan ringkasan status per hari (⏳ terjadwal · ⚙ diproses · ✓ tayang · ✗ gagal) dan daftar per hari beserta pesan error; bisa disembunyikan, berdampingan dengan cron agen.
-- **Tugas (Kanban)**: kartu "Alur Repliz" read-only — To Do = posting gagal (Scheduler) & komentar menunggu (Community); In Progress = sedang dipublikasikan; Ready = antrean tayang berikutnya; Done = tayang 24 jam terakhir.
-- **Sosial**: strip *Alur kerja kantor* (6 tahap, status agen + angka, label Repliz/Mock) di atas ringkasan akun, jadwal, kegagalan, dan komentar.
-- Belum ada tulis ke Repliz (jadwalkan ulang, balas komentar, buat posting): itu tindakan keluar yang perlu konfirmasi eksplisit — lihat saran lanjutan.
+## Performa 3D
+Tombol **Kualitas** (Tinggi / Sedang / Ringan) di kanan atas tampilan 3D (`src/lib/quality.ts`): mengatur resolusi (DPR), bayangan, batas FPS (render hanya sesuai kebutuhan di mode Sedang/Ringan), dan lampu titik. Bila FPS terukur rendah, kualitas turun otomatis satu tingkat (pilihan manual mematikan ini dan disimpan). Di uji render software, Ringan ±2× lebih cepat. Server/VPS tidak mempercepat rendering 3D — itu dikerjakan GPU perangkat yang membuka halaman.

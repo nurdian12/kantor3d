@@ -113,3 +113,79 @@ export async function getScheduleRange(from: string, to: string): Promise<Schedu
   if (rangeCache.size > 20) rangeCache.delete(rangeCache.keys().next().value as string);
   return data;
 }
+
+// ---------- File storage (tab File) ----------
+export interface FileItem { id: string; filename: string; mimetype: string; size: number; createdAt: string; url: string }
+export interface FilePage { page: number; totalPages: number; total: number; items: FileItem[]; storage: { used: number; total: number; files: number } | null }
+
+const STORAGE_HOST = "https://storage.repliz.com";
+export async function getFiles(page: number, limit: number, search: string): Promise<FilePage> {
+  const [files, stat] = await Promise.all([
+    get("/public/storage/file", { page, limit, ...(search ? { search } : {}) }),
+    get("/public/storage/statistic").catch(() => null),
+  ]);
+  return {
+    page: files.page ?? page, totalPages: files.totalPages ?? 1, total: files.totalDocs ?? 0,
+    items: (files.docs ?? []).map((f: any) => ({ id: f.id, filename: clip(f.filename, 120), mimetype: f.mimetype ?? "", size: f.size ?? 0, createdAt: f.createdAt, url: f.key ? `${STORAGE_HOST}/${f.key}` : "" })), // eslint-disable-line @typescript-eslint/no-explicit-any
+    storage: stat ? { used: stat.usage?.used ?? 0, total: stat.usage?.total ?? 0, files: stat.file?.total ?? 0 } : null,
+  };
+}
+
+// ---------- Knowledge base (tab Memori) ----------
+export interface KnowledgeItem { id: string; name: string; description: string; sources: number; updatedAt?: string }
+export async function getKnowledge(): Promise<KnowledgeItem[]> {
+  const r = await get("/public/knowledge");
+  return (r.docs ?? []).map((k: any) => ({ id: k.id ?? k._id, name: clip(k.name, 100), description: clip(k.description, 300), sources: Array.isArray(k.sources) ? k.sources.length : (k.sourceCount ?? 0), updatedAt: k.updatedAt })); // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+// ---------- Statistik akun (tab Analitik) ----------
+export interface AccountStat {
+  id: string; type: string; name: string;
+  followers: number | null;
+  metricLabel: string; metricTotal: number | null;
+  series: Array<{ date: string; value: number }>;
+  extras: Array<{ label: string; value: number }>;
+}
+export interface StatsSummary { fetchedAt: number; accounts: AccountStat[]; failed: number }
+
+const num = (v: unknown) => (typeof v === "number" && isFinite(v) ? v : 0);
+const sum = (a: Array<{ value: number }>) => a.reduce((s, x) => s + x.value, 0);
+const day = (iso: string) => String(iso).slice(0, 10);
+
+/** Bentuk statistik berbeda per platform -> disamakan ke {pengikut, metrik utama, deret harian, ekstra} */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizeStat(acc: { id: string; type: string; name: string }, r: any): AccountStat {
+  const base = { id: acc.id, type: acc.type, name: acc.name };
+  const series = (arr: any[] | undefined, key: string) => (arr ?? []).map((m) => ({ date: day(m.date), value: num(m[key]) })); // eslint-disable-line @typescript-eslint/no-explicit-any
+  switch (acc.type) {
+    case "instagram": { const s = series(r.metrics, "reach"); return { ...base, followers: num(r.followersCount), metricLabel: "Jangkauan", metricTotal: sum(s), series: s, extras: [{ label: "Interaksi", value: num(r.totalInteractions) }, { label: "Suka", value: num(r.likes) }, { label: "Komentar", value: num(r.comments) }] }; }
+    case "facebook": { const s = series(r.metrics, "views"); return { ...base, followers: num(r.followersCount), metricLabel: "Views", metricTotal: num(r.summary?.views) || sum(s), series: s, extras: [{ label: "Jangkauan", value: num(r.summary?.reach) }, { label: "Engagement", value: num(r.summary?.engagement) }, { label: "Tayangan video", value: num(r.summary?.videoViews) }] }; }
+    case "youtube": { const s = series(r.metrics, "views"); return { ...base, followers: num(r.subscribersCount), metricLabel: "Views", metricTotal: num(r.summary?.views) || sum(s), series: s, extras: [{ label: "Menit ditonton", value: num(r.summary?.estimatedMinutesWatched) }, { label: "Suka", value: num(r.summary?.likes) }, { label: "Komentar", value: num(r.summary?.comments) }] }; }
+    case "tiktok": { const s = series(r.metrics, "videoViews"); return { ...base, followers: num(r.followersCount), metricLabel: "Views video", metricTotal: sum(s), series: s, extras: [{ label: "Total suka", value: num(r.totalLikes) }, { label: "Video", value: num(r.videosCount) }] }; }
+    case "threads": { const s = (r.views?.graphs ?? []).map((g: any) => ({ date: day(g.date), value: num(g.value) })); return { ...base, followers: num(r.followersCount), metricLabel: "Views", metricTotal: num(r.views?.total) || sum(s), series: s, extras: [{ label: "Suka", value: num(r.likes) }, { label: "Balasan", value: num(r.replies) }] }; } // eslint-disable-line @typescript-eslint/no-explicit-any
+    default: return { ...base, followers: r.followersCount ?? r.subscribersCount ?? null, metricLabel: "—", metricTotal: null, series: [], extras: [] };
+  }
+}
+
+let statsCache: { at: number; data: StatsSummary } | null = null;
+const STATS_TTL = 10 * 60_000; // statistik berubah lambat & mahal (1 panggilan per akun)
+
+export async function getStats(force = false): Promise<StatsSummary> {
+  if (!force && statsCache && Date.now() - statsCache.at < STATS_TTL) return statsCache.data;
+  const accs = await get("/public/account", { page: 1, limit: 100 });
+  const connected = (accs.docs ?? []).filter((a: any) => a.isConnected).slice(0, 30); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const out: AccountStat[] = [];
+  let failed = 0;
+  for (let i = 0; i < connected.length; i += 4) { // maks. 4 paralel agar tidak membebani API
+    const batch = connected.slice(i, i + 4);
+    const res = await Promise.allSettled(batch.map((a: any) => get(`/public/account/${a.id}/statistic`))); // eslint-disable-line @typescript-eslint/no-explicit-any
+    res.forEach((r, k) => {
+      const a = batch[k];
+      if (r.status === "fulfilled") out.push(normalizeStat({ id: a.id, type: a.type, name: clip(a.name, 60) }, r.value));
+      else failed++;
+    });
+  }
+  const data = { fetchedAt: Date.now(), accounts: out, failed };
+  statsCache = { at: Date.now(), data };
+  return data;
+}

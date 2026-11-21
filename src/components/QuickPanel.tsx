@@ -3,6 +3,8 @@ import { useMissionStore, statusLabel } from "@/store/useMissionStore";
 import { spotFor } from "./Character";
 import type { AgentStatus } from "@/lib/types";
 import { sendCommand } from "@/lib/useAgentSocket";
+import { useWorkStore } from "@/store/useWorkStore";
+import { NOT_CONNECTED } from "@/store/useMissionStore";
 
 const badge: Record<AgentStatus, string> = {
   working: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300",
@@ -15,7 +17,8 @@ const logColor = { info: "text-slate-500", warn: "text-amber-500", error: "text-
 const fmt = (t: number) => new Date(t).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
 export default function QuickPanel() {
-  const { agents, logs, selectedId, select, setStatus: setLocal, simulate, toggleSimulate, connection } = useMissionStore();
+  const { agents, logs, selectedId, select, setStatus: setLocal, connection } = useMissionStore();
+  const social = useWorkStore((s) => s.social);
   // saat terhubung, server adalah sumber kebenaran: kirim perintah, tunggu broadcast
   const setStatus = (id: string, status: AgentStatus) => { if (connection === "live") sendCommand({ type: "set_status", agentId: id, status }); else setLocal(id, status); };
   const counts = { working: 0, idle: 0, error: 0 };
@@ -47,7 +50,7 @@ export default function QuickPanel() {
                   <span className={`h-1.5 w-1.5 rounded-full ${dot[a.status]}`} />{statusLabel(a.status)}
                 </span>
               </div>
-              <p className="mt-2 truncate text-xs text-slate-600 dark:text-slate-400">{a.task}</p>
+              <p className="mt-2 truncate text-xs text-slate-600 dark:text-slate-400" title={a.task}>{(NOT_CONNECTED as readonly string[]).includes(a.id) && connection !== "live" ? "⚠ Belum terhubung ke sumber data" : a.task}</p>
               <div className="mt-2 flex gap-1" onClick={(e) => e.stopPropagation()}>
                 {(["working", "idle", "error"] as AgentStatus[]).map((s) => (
                   <button key={s} onClick={() => setStatus(a.id, s)}
@@ -66,9 +69,9 @@ export default function QuickPanel() {
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Log Aktivitas{selectedId ? " (terfilter)" : ""}</h2>
           {connection !== "offline" ? (
             <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${connection === "live" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-amber-500/15 text-amber-600"}`}>{connection === "live" ? "● WS Live" : "◌ Menghubungkan"}</span>
-          ) : <button onClick={toggleSimulate} className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${simulate ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
-            {simulate ? "● Live" : "○ Paused"}
-          </button>}
+          ) : (
+            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${social ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>{social ? `● Repliz ${new Date(social.fetchedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}` : "○ Repliz belum terhubung"}</span>
+          )}
         </div>
         <ul className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1">
           {visible.map((l) => {

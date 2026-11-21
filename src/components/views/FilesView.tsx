@@ -1,80 +1,75 @@
 "use client";
-import { useMemo, useState } from "react";
-import { agentMeta } from "@/lib/agentsMeta";
-import { FILES } from "@/lib/mockData";
-import { AgentDot, card, relTime } from "./ui";
+import { useCallback, useEffect, useState } from "react";
+import type { FileItem, FilePage } from "@/lib/repliz";
+import { card, relTime } from "./ui";
 
-interface Node { name: string; path: string; children: Map<string, Node>; file?: (typeof FILES)[number] }
+const size = (n: number) => (n >= 1e9 ? (n / 1e9).toFixed(2) + " GB" : n >= 1e6 ? (n / 1e6).toFixed(1) + " MB" : n >= 1e3 ? Math.round(n / 1e3) + " KB" : n + " B");
+const kind = (m: string) => (m.startsWith("image/") ? "image" : m.startsWith("video/") ? "video" : "other");
+const icon = (m: string) => (kind(m) === "image" ? "🖼️" : kind(m) === "video" ? "🎬" : "📄");
 
-function buildTree() {
-  const root: Node = { name: "outputs", path: "", children: new Map() };
-  for (const f of FILES) {
-    let cur = root;
-    f.path.split("/").forEach((part, i, arr) => {
-      const path = arr.slice(0, i + 1).join("/");
-      if (!cur.children.has(part)) cur.children.set(part, { name: part, path, children: new Map() });
-      cur = cur.children.get(part)!;
-      if (i === arr.length - 1) cur.file = f;
-    });
-  }
-  return root;
-}
-const size = (s: string) => { const b = new Blob([s]).size; return b < 1024 ? `${b} B` : `${(b / 1024).toFixed(1)} KB`; };
-const icon = (n: Node) => (n.file ? (n.name.endsWith(".md") ? "📝" : n.name.endsWith(".csv") ? "📊" : n.name.endsWith(".json") ? "🧾" : n.name.endsWith(".log") ? "📜" : "📄") : "📁");
-
-function Row({ node, depth, open, toggle, selected, select }: { node: Node; depth: number; open: Set<string>; toggle: (p: string) => void; selected: string | null; select: (p: string) => void }) {
-  const isDir = !node.file;
-  const isOpen = open.has(node.path);
-  const kids = [...node.children.values()].sort((a, b) => Number(!!a.file) - Number(!!b.file) || a.name.localeCompare(b.name));
-  return (
-    <li role="treeitem" aria-expanded={isDir ? isOpen : undefined} aria-selected={selected === node.path}>
-      <button onClick={() => (isDir ? toggle(node.path) : select(node.path))} style={{ paddingLeft: 8 + depth * 14 }}
-        className={`flex w-full items-center gap-2 rounded-md py-1 pr-2 text-left text-sm ${selected === node.path ? "bg-indigo-600 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800"}`}>
-        {isDir && <span className="w-3 text-[10px] opacity-60">{isOpen ? "▾" : "▸"}</span>}
-        <span>{depth === 1 && isDir ? "🧑‍💻" : icon(node)}</span>
-        <span className="truncate">{depth === 1 && isDir ? agentMeta(node.name).name : node.name}</span>
-      </button>
-      {isDir && isOpen && <ul role="group">{kids.map((k) => <Row key={k.path} node={k} depth={depth + 1} open={open} toggle={toggle} selected={selected} select={select} />)}</ul>}
-    </li>
-  );
+function Thumb({ f }: { f: FileItem }) {
+  const [bad, setBad] = useState(false);
+  if (kind(f.mimetype) === "image" && f.url && !bad)
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={f.url} alt={f.filename} loading="lazy" onError={() => setBad(true)} className="h-full w-full object-cover" />;
+  if (kind(f.mimetype) === "video" && f.url && !bad)
+    return <video src={f.url + "#t=0.5"} preload="metadata" muted onError={() => setBad(true)} className="h-full w-full object-cover" />;
+  return <span className="text-3xl">{icon(f.mimetype)}</span>;
 }
 
 export default function FilesView() {
-  const tree = useMemo(buildTree, []);
-  const [open, setOpen] = useState<Set<string>>(() => new Set(["manager", "creator", "manager/reports"]));
-  const [selected, setSelected] = useState<string | null>(FILES[0].path);
-  const file = FILES.find((f) => f.path === selected);
-  const toggle = (p: string) => setOpen((s) => { const n = new Set(s); if (n.has(p)) n.delete(p); else n.add(p); return n; });
-  const download = () => {
-    if (!file) return;
-    const url = URL.createObjectURL(new Blob([file.content], { type: "text/plain" }));
-    const a = Object.assign(document.createElement("a"), { href: url, download: file.path.split("/").pop() });
-    a.click(); URL.revokeObjectURL(url);
-  };
-  const crumbs = file ? file.path.split("/") : [];
+  const [data, setData] = useState<FilePage | null>(null);
+  const [page, setPage] = useState(1);
+  const [q, setQ] = useState("");
+  const [search, setSearch] = useState("");
+  const [type, setType] = useState<"all" | "image" | "video">("all");
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/repliz/files?page=${page}&limit=40${search ? `&search=${encodeURIComponent(search)}` : ""}`, { cache: "no-store" });
+      const j = await r.json();
+      if (r.ok) { setData(j); setErr(null); } else setErr(j.message ?? "Gagal memuat file.");
+    } catch { setErr("Tidak dapat menghubungi server."); }
+    setLoading(false);
+  }, [page, search]);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { const id = setTimeout(() => { setSearch(q.trim()); setPage(1); }, 400); return () => clearTimeout(id); }, [q]);
+
+  if (err && !data) return <div className="p-4"><div className={`${card} max-w-xl space-y-2 p-5`}><h2 className="text-sm font-semibold">File Repliz belum tersedia</h2><p className="text-sm text-slate-600 dark:text-slate-300">{err}</p><button onClick={load} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white">Coba lagi</button></div></div>;
+
+  const items = (data?.items ?? []).filter((f) => type === "all" || kind(f.mimetype) === type);
+  const st = data?.storage;
   return (
-    <div className="grid h-full grid-cols-1 gap-4 overflow-auto p-4 lg:grid-cols-[320px_1fr]">
-      <aside className={`${card} min-h-0 overflow-auto p-2`}>
-        <h2 className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Output agen</h2>
-        <ul role="tree" aria-label="File output agen">
-          {[...tree.children.values()].map((n) => <Row key={n.path} node={n} depth={1} open={open} toggle={toggle} selected={selected} select={setSelected} />)}
-        </ul>
-      </aside>
-      <section className={`${card} flex min-h-[320px] min-w-0 flex-col p-4`}>
-        {file ? (
-          <>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <nav aria-label="Lokasi file" className="flex flex-wrap items-center gap-1 text-xs text-slate-500">
-                {crumbs.map((c, i) => <span key={i} className="flex items-center gap-1">{i > 0 && "/"}<span className={i === crumbs.length - 1 ? "font-semibold text-slate-800 dark:text-slate-100" : ""}>{i === 0 ? agentMeta(c).name : c}</span></span>)}
-              </nav>
-              <button onClick={download} className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">⬇ Unduh</button>
-            </div>
-            <p className="mb-2 flex items-center gap-1.5 text-[11px] text-slate-500"><AgentDot id={file.agentId} />{agentMeta(file.agentId).name} · {size(file.content)} · diubah {relTime(file.modified)}</p>
-            <pre className="min-h-0 flex-1 overflow-auto rounded-xl bg-slate-950 p-4 font-mono text-xs leading-relaxed text-slate-200">{file.content}</pre>
-          </>
-        ) : <p className="m-auto text-sm text-slate-500">Pilih file untuk melihat isinya.</p>}
-      </section>
+    <div className="flex h-full flex-col gap-3 p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama file…" aria-label="Cari file" className="w-56 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-400 dark:border-slate-600 dark:bg-slate-800" />
+        {(["all", "image", "video"] as const).map((t) => (
+          <button key={t} onClick={() => setType(t)} aria-pressed={type === t} className={`rounded-full px-3 py-1 text-xs font-medium ${type === t ? "bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>{t === "all" ? "Semua" : t === "image" ? "🖼️ Gambar" : "🎬 Video"}</button>
+        ))}
+        <p className="ml-auto text-xs text-slate-500">Sumber: Repliz storage · {data ? `${data.total.toLocaleString("id-ID")} file` : "…"}{st ? ` · ${size(st.used)} / ${size(st.total)}` : ""}</p>
+      </div>
+      {st && <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800" aria-label="Pemakaian penyimpanan"><div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.min(100, (st.used / Math.max(st.total, 1)) * 100)}%` }} /></div>}
+
+      <ul className="grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-3 overflow-auto sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6" aria-label="Daftar file">
+        {items.map((f) => (
+          <li key={f.id} className={`${card} overflow-hidden`}>
+            <a href={f.url} target="_blank" rel="noreferrer noopener" className="block">
+              <div className="flex aspect-square items-center justify-center bg-slate-100 dark:bg-slate-800"><Thumb f={f} /></div>
+              <div className="p-2"><p className="truncate text-xs font-medium" title={f.filename}>{f.filename}</p><p className="text-[10px] text-slate-500">{size(f.size)} · {relTime(+new Date(f.createdAt))}</p></div>
+            </a>
+          </li>
+        ))}
+        {items.length === 0 && <li className="col-span-full text-sm text-slate-500">{loading ? "Memuat…" : "Tidak ada file yang cocok."}</li>}
+      </ul>
+
+      <div className="flex items-center justify-center gap-3 text-sm">
+        <button disabled={page <= 1 || loading} onClick={() => setPage((p) => p - 1)} className="rounded-lg bg-slate-100 px-3 py-1.5 disabled:opacity-40 dark:bg-slate-800">← Sebelumnya</button>
+        <span className="text-xs text-slate-500">Halaman {page} / {data?.totalPages ?? 1}</span>
+        <button disabled={!data || page >= data.totalPages || loading} onClick={() => setPage((p) => p + 1)} className="rounded-lg bg-slate-100 px-3 py-1.5 disabled:opacity-40 dark:bg-slate-800">Berikutnya →</button>
+      </div>
     </div>
   );
 }
