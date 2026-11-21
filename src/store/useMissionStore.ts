@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import type { Agent, AgentStatus, LogEntry } from "@/lib/types";
-import { CAPACITY } from "@/lib/layout";
+import { CAPACITY, DESKS } from "@/lib/layout";
 import type { Quality } from "@/lib/quality";
+import type { Focus } from "@/lib/layout";
 import { AGENT_META } from "@/lib/agentsMeta";
 import type { RemoteAgent, RemoteLog } from "@/lib/protocol";
 import type { UsageRecord } from "@/lib/workTypes";
@@ -9,13 +10,14 @@ import type { UsageRecord } from "@/lib/workTypes";
 export type ViewMode = "3d" | "2d";
 export type Theme = "light" | "dark";
 export type Tab = "office" | "tasks" | "calendar" | "analytics" | "usage" | "memory" | "files" | "social" | "logs";
-export type Focus = "all" | "1" | "2";
+export type { Focus } from "@/lib/layout";
 export type Connection = "offline" | "connecting" | "live";
 
 const PALETTE = ["#6366f1", "#10b981", "#f59e0b", "#ec4899", "#06b6d4", "#8b5cf6"];
 
 /** Ubah agen dari server menjadi Agent lokal (warna/meja/spot idle dipertahankan bila agen sudah dikenal) */
-function toAgent(r: RemoteAgent, i: number, prev?: Agent): Agent {
+function toAgent(r: RemoteAgent, i: number, prev?: Agent, freeDesk?: number): Agent {
+  const meta = AGENT_META.find((m) => m.id === r.id);
   return {
     id: r.id,
     name: r.name,
@@ -23,8 +25,8 @@ function toAgent(r: RemoteAgent, i: number, prev?: Agent): Agent {
     color: prev?.color ?? PALETTE[i % PALETTE.length],
     status: r.status,
     task: r.task ?? prev?.task ?? "",
-    idleIndex: prev?.idleIndex ?? i % CAPACITY,
-    deskIndex: prev?.deskIndex ?? i % CAPACITY,
+    idleIndex: prev?.idleIndex ?? meta?.idleIndex ?? i % CAPACITY,
+    deskIndex: prev?.deskIndex ?? meta?.deskIndex ?? freeDesk ?? i % DESKS.length,
   };
 }
 const toLog = (l: RemoteLog): LogEntry => ({ id: l.id ?? ++logSeq, agentId: l.agentId, time: l.time ?? Date.now(), level: l.level ?? "info", message: l.message });
@@ -38,7 +40,7 @@ const NO_SOURCE = "Belum terhubung — butuh sumber data (Repliz research/templa
 const INITIAL_AGENTS: Agent[] = AGENT_META.map((m, i) => ({
   id: m.id, name: m.name, role: m.role, color: m.color, status: "idle" as const,
   task: (NOT_CONNECTED as readonly string[]).includes(m.id) ? NO_SOURCE : WAITING,
-  idleIndex: i, deskIndex: i,
+  idleIndex: m.idleIndex, deskIndex: m.deskIndex,
 }));
 
 const MAX_LOGS = 50;
@@ -113,7 +115,7 @@ export const useMissionStore = create<MissionState>((set, get) => ({
     get().addLog(
       id,
       status === "error" ? "error" : status === "idle" ? "warn" : "info",
-      status === "working" ? `Mulai bekerja: ${task}` : status === "idle" ? "Berpindah ke area istirahat (lantai 2)" : task,
+      status === "working" ? `Mulai bekerja: ${task}` : status === "idle" ? "Berpindah ke area istirahat (lantai 5)" : task,
     );
   },
   cycleStatus: (id) => {
@@ -129,10 +131,21 @@ export const useMissionStore = create<MissionState>((set, get) => ({
   select: (selectedId) => set((s) => ({ selectedId, follow: selectedId && selectedId !== s.selectedId ? true : s.follow })),
   setConnection: (connection) => set({ connection }),
   applySnapshot: (agents, logs) =>
-    set((s) => ({
-      agents: agents.map((r, i) => toAgent(r, i, s.agents.find((a) => a.id === r.id))),
+    set((s) => {
+      // meja untuk agen tak dikenal: ambil yang belum dipakai agen berperan tetap / agen sebelumnya
+      const taken = new Set<number>(AGENT_META.map((m) => m.deskIndex));
+      for (const a of s.agents) taken.add(a.deskIndex);
+      const free = DESKS.map((_, i) => i).filter((i) => !taken.has(i));
+      let f = 0;
+      return {
+      agents: agents.map((r, i) => {
+        const prev = s.agents.find((a) => a.id === r.id);
+        const known = prev || AGENT_META.some((m) => m.id === r.id);
+        return toAgent(r, i, prev, known ? undefined : free[f++ % Math.max(1, free.length)]);
+      }),
       logs: logs ? logs.map(toLog).sort((a, b) => b.time - a.time).slice(0, MAX_LOGS) : s.logs,
-    })),
+      };
+    }),
   applyStatus: (agentId, status, task) =>
     set((s) => ({ agents: s.agents.map((a) => (a.id === agentId ? { ...a, status, task: task ?? a.task } : a)) })),
   usage: [],

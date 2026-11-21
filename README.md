@@ -1,6 +1,6 @@
 # AI Agent Mission Control
 
-Dashboard kantor virtual 3D (Next.js App Router, TypeScript, Tailwind, React Three Fiber) dengan data mock.
+Dashboard kantor virtual 3D **5 lantai** (Next.js App Router, TypeScript, Tailwind, React Three Fiber).
 
 ```bash
 npm install
@@ -11,7 +11,7 @@ npm run dev   # http://localhost:3000
 - `src/lib/layout.ts` – koordinat meja, area idle (lounge/kamar/balkon), tangga
 - `src/components/` – `Office` (model 3D), `Character` (animasi jalan lewat tangga), `Overview2D`, `QuickPanel`, `Dashboard`
 
-Working/Error → meja lantai 1 · Idle → lantai 2. Ganti status lewat Quick Panel atau biarkan simulasi "Live" berjalan.
+Working/Error → meja di lantai kerja masing-masing (1–4) · Idle → lantai 5 (lounge, kamar, rooftop). Ganti status lewat Quick Panel atau biarkan simulasi "Live" berjalan.
 
 ## Data real-time via WebSocket
 
@@ -27,8 +27,7 @@ Klien reconnect otomatis (exponential backoff). Agen dari server dipetakan ke 6 
 (`CAPACITY` di `src/lib/layout.ts`); agen ke-7 dst. berbagi meja/spot. Server mock kini mengirim 6 agen.
 
 ## Fokus kamera
-Tombol **Semua / Lantai 1 / Lantai 2** di pojok kiri atas tampilan 3D menganimasikan kamera ke preset (`PRESETS` di `Scene3D.tsx`).
-Fokus Lantai 1 menyembunyikan lantai 2 dan karakter di dalamnya agar kedua baris meja terlihat penuh dari atas.
+Tombol **Semua / L1–L5** di pojok kiri atas tampilan 3D menganimasikan kamera ke lantai terpilih (`presetFor` di `Scene3D.tsx`). Fokus lantai n menyembunyikan lantai di atasnya, dan hanya karakter di lantai n yang tampil.
 
 ## Kamera mengikuti agen
 Klik agen (di scene 3D atau di Quick Panel): kamera menghaluskan gerak ke agen tersebut, zoom otomatis sekali, lalu terus mengikuti
@@ -82,3 +81,18 @@ File contoh ada di `deploy/` (`mission-control.service`, `Caddyfile`, `deploy.sh
 4. Firewall: buka hanya 22, 80, 443; aplikasi mendengarkan di `127.0.0.1:3000`.
 5. Update: `deploy/deploy.sh`.
 Server WebSocket (`server/mock-server.mjs`) hanya mock untuk pengembangan — jangan dideploy; tanpa runtime agen sungguhan, biarkan `NEXT_PUBLIC_WS_URL` kosong.
+
+## Gedung 5 lantai
+Tiap lantai punya fungsi sesuai alur kerja (`FLOOR_INFO` di `src/lib/layout.ts`):
+
+| Lantai | Fungsi | Penghuni |
+|---|---|---|
+| 5 | Santai & Rooftop: lounge, 2 kamar tidur, dek rooftop | agen berstatus Idle |
+| 4 | Ruang Kontrol: layar kalender besar, meja rapat | Nova, Orbit |
+| 3 | Riset & Analitik: dinding data, rak server | Radar, Kompas |
+| 2 | Studio Konten: ring light, kamera, backdrop | Pixel |
+| 1 | Lobi & Komunitas: resepsionis, sofa tunggu | Sapa |
+
+- Lantai 1–4 masing-masing punya 3 meja (12 total); penempatan agen ada di `deskIndex` pada `src/lib/agentsMeta.ts`. Agen dari server yang tidak dikenal otomatis mendapat meja kosong.
+- Tangga berkelok (switchback) menghubungkan semua lantai; karakter berjalan lewat setiap tangga di antara lantai asal dan tujuan (`stairPath`).
+- Gedung lebih berat dirender daripada versi 2 lantai: **Ringan** menghapus bayangan, lampu titik, dan dekorasi lantai 1–4; **Sedang** menghapus lampu titik.

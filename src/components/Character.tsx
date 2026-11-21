@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { Agent, Pose } from "@/lib/types";
-import { DESKS, FLOOR_H, IDLE_SPOTS, STAIRS, STAIR_APPROACH_1, STAIR_APPROACH_2, type Spot } from "@/lib/layout";
+import { DESKS, IDLE_SPOTS, agentVisible, floorOfY, stairPath, type Spot } from "@/lib/layout";
 import { useMissionStore, statusLabel } from "@/store/useMissionStore";
 
 const SPEED = 2.6;
@@ -13,16 +13,15 @@ export const agentObjects = new Map<string, THREE.Object3D>();
 type V3 = [number, number, number];
 
 export function spotFor(agent: Agent): Spot {
-  // Working & Error tetap di meja lantai 1; Idle di lantai 2
+  // Working & Error tetap di meja lantai kerjanya (lantai 1-4); Idle di lantai 5 (lounge/kamar/balkon)
   return agent.status === "idle" ? IDLE_SPOTS[agent.idleIndex % IDLE_SPOTS.length] : DESKS[agent.deskIndex % DESKS.length];
 }
 
+/** Jalur ke tujuan: langsung bila satu lantai; bila beda lantai, lewat semua tangga di antaranya */
 function buildPath(from: THREE.Vector3, to: Spot): V3[] {
-  const fromFloor2 = from.y > FLOOR_H / 2;
-  const toFloor2 = to.floor === 2;
-  if (fromFloor2 === toFloor2) return [to.pos];
-  if (!fromFloor2) return [STAIR_APPROACH_1, STAIRS.bottom, STAIRS.top, STAIR_APPROACH_2, to.pos];
-  return [STAIR_APPROACH_2, STAIRS.top, STAIRS.bottom, STAIR_APPROACH_1, to.pos];
+  const a = floorOfY(from.y);
+  if (a === to.floor) return [to.pos];
+  return [...stairPath(a, to.floor), to.pos];
 }
 
 const statusColor = { working: "#22c55e", idle: "#38bdf8", error: "#ef4444" } as const;
@@ -117,7 +116,7 @@ export function Character({ agent }: { agent: Agent }) {
 
     // fokus lantai: sembunyikan karakter di lantai yang tidak difokuskan
     const focus = useMissionStore.getState().focus;
-    const show = focus === "all" || (focus === "1") === (g.position.y < FLOOR_H / 2);
+    const show = agentVisible(focus, g.position.y);
     g.visible = show;
     if (show !== tagShown) setTagShown(show); // Html drei tidak mengikuti visible induk
 

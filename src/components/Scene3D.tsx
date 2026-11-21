@@ -5,17 +5,18 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Office } from "./Office";
 import { Character, agentObjects } from "./Character";
-import { FLOOR_H } from "@/lib/layout";
+import { FLOORS, FLOOR_H, floorOfY, floorY } from "@/lib/layout";
 import { useMissionStore, type Focus } from "@/store/useMissionStore";
 import { DOWNGRADE_BELOW, QUALITY, QUALITY_ORDER } from "@/lib/quality";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
-const PRESETS: Record<Focus, { pos: [number, number, number]; target: [number, number, number] }> = {
-  all: { pos: [8, 6, 19], target: [0, 3.2, 0] },
-  // Lantai 1: dari atas-depan agar kedua baris meja terlihat (lantai 2 disembunyikan)
-  "1": { pos: [0, 14.5, 12.5], target: [0, 0.2, 0.4] },
-  "2": { pos: [1.5, 10, 21], target: [1, 4, 1] },
-};
+type Cam = { pos: [number, number, number]; target: [number, number, number] };
+/** Semua lantai: pandangan menyamping agar kelima lantai terlihat; fokus lantai n: dari atas-depan ke lantai n (lantai di atasnya disembunyikan) */
+const MID = (FLOORS * FLOOR_H) / 2;
+const presetFor = (f: Focus): Cam =>
+  f === "all"
+    ? { pos: [13, MID + 4, 30], target: [0, MID - 0.5, 0] }
+    : { pos: [0, floorY(Number(f)) + 14.3, 12.5], target: [0, floorY(Number(f)) + 0.3, 0.4] };
 
 /** Animasi halus kamera ke preset saat fokus berubah; setelah itu kontrol bebas kembali ke pengguna */
 function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl | null> }) {
@@ -32,7 +33,7 @@ function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl |
     // bila agen ada di lantai yang disembunyikan, tampilkan semua lantai
     const o = agentObjects.get(selectedId);
     const st = useMissionStore.getState();
-    if (o && st.focus !== "all" && (st.focus === "1") !== (o.position.y < FLOOR_H / 2)) st.setFocus("all");
+    if (o && st.focus !== "all" && floorOfY(o.position.y) !== Number(st.focus)) st.setFocus("all"); // agen di lantai yang disembunyikan
   }, [selectedId]);
   const tmp = useRef({ d: new THREE.Vector3(), dir: new THREE.Vector3() });
 
@@ -60,7 +61,7 @@ function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl |
     if (a.first) { a.from.copy(camera.position); a.fromT.copy(c.target); a.first = false; }
     a.t = Math.min(1, a.t + dt / 1.1);
     const k = 1 - Math.pow(1 - a.t, 3);
-    const p = PRESETS[focus];
+    const p = presetFor(focus);
     camera.position.lerpVectors(a.from, new THREE.Vector3(...p.pos), k);
     c.target.lerpVectors(a.fromT, new THREE.Vector3(...p.target), k);
     c.update();
@@ -124,15 +125,15 @@ export default function Scene3D({ active = true }: { active?: boolean }) {
   return (
     // Canvas TIDAK dibuat ulang saat kualitas berubah (teardown label Html drei memicu error removeChild).
     // Antialias hanya bisa ditentukan saat dibuat, jadi dipakai nilai awal; dpr/bayangan/FPS/lampu berubah langsung.
-    <Canvas frameloop={!active ? "never" : q.fps ? "demand" : "always"} shadows={q.shadows} camera={{ position: [8, 6, 19], fov: 42 }}
+    <Canvas frameloop={!active ? "never" : q.fps ? "demand" : "always"} shadows={q.shadows} camera={{ position: presetFor("all").pos, fov: 38 }}
       onPointerMissed={() => select(null)} dpr={q.dpr} gl={{ antialias, powerPreference: "high-performance" }}>
       {active && q.fps > 0 && <FrameLimiter fps={q.fps} />}
       {active && <FpsGuard />}
       <color attach="background" args={[dark ? "#121a33" : "#e8eef7"]} />
-      <fog attach="fog" args={[dark ? "#121a33" : "#e8eef7", 40, 80]} />
+      <fog attach="fog" args={[dark ? "#121a33" : "#e8eef7", 60, 130]} />
       <ambientLight intensity={dark ? 1.1 : 1.1} />
-      <directionalLight ref={light} position={[10, 18, 14]} intensity={dark ? 1.3 : 1.7} castShadow={q.shadows} shadow-mapSize={[q.shadowMap || 512, q.shadowMap || 512]}
-        shadow-camera-left={-16} shadow-camera-right={16} shadow-camera-top={16} shadow-camera-bottom={-16} />
+      <directionalLight ref={light} position={[16, 34, 24]} intensity={dark ? 1.3 : 1.7} castShadow={q.shadows} shadow-mapSize={[q.shadowMap || 512, q.shadowMap || 512]}
+        shadow-camera-left={-24} shadow-camera-right={24} shadow-camera-top={28} shadow-camera-bottom={-12} shadow-camera-far={110} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.32, 0]} receiveShadow>
         <planeGeometry args={[120, 120]} />
         <meshStandardMaterial color={dark ? "#1a2342" : "#cfd8e6"} />
@@ -140,7 +141,7 @@ export default function Scene3D({ active = true }: { active?: boolean }) {
       <Office theme={theme} />
       {agents.map((a) => <Character key={a.id} agent={a} />)}
       <CameraRig controls={controls} />
-      <OrbitControls ref={controls} target={[0, 3.2, 0]} maxPolarAngle={Math.PI / 2.1} minDistance={8} maxDistance={45} enablePan />
+      <OrbitControls ref={controls} target={presetFor("all").target} maxPolarAngle={Math.PI / 2.1} minDistance={8} maxDistance={80} enablePan />
     </Canvas>
   );
 }
