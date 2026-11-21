@@ -28,12 +28,12 @@ function verifyTicket(token) {
 }
 
 const agents = [
-  { id: "manager", name: "Social Manager", role: "Orkestrator", status: "working", task: "Menyusun kalender konten" },
-  { id: "scraper", name: "Social Scraper", role: "Riset & Scraping", status: "working", task: "Scraping tren TikTok & Threads" },
-  { id: "creator", name: "Content Creator", role: "Pembuatan Konten", status: "idle", task: "Menunggu brief" },
-  { id: "scheduler", name: "Scheduler", role: "Penjadwalan (Repliz)", status: "working", task: "Mengisi antrean posting" },
-  { id: "community", name: "Community Manager", role: "Komentar & Chat (Repliz)", status: "idle", task: "Tidak ada komentar menunggu" },
-  { id: "analyst", name: "Analyst", role: "Analitik Performa", status: "idle", task: "Menunggu data baru" },
+  { id: "manager", name: "Nova", role: "Orkestrator", status: "working", task: "Menyusun kalender konten" },
+  { id: "scraper", name: "Radar", role: "Riset & Scraping", status: "working", task: "Scraping tren TikTok & Threads" },
+  { id: "creator", name: "Pixel", role: "Pembuatan Konten", status: "idle", task: "Menunggu brief" },
+  { id: "scheduler", name: "Orbit", role: "Penjadwalan (Repliz)", status: "working", task: "Mengisi antrean posting" },
+  { id: "community", name: "Sapa", role: "Komentar & Chat (Repliz)", status: "idle", task: "Tidak ada komentar menunggu" },
+  { id: "analyst", name: "Kompas", role: "Analitik Performa", status: "idle", task: "Menunggu data baru" },
 ];
 const logs = [];
 let seq = 0;

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { Agent, AgentStatus, LogEntry } from "@/lib/types";
 import { CAPACITY } from "@/lib/layout";
 import type { Quality } from "@/lib/quality";
+import { AGENT_META } from "@/lib/agentsMeta";
 import type { RemoteAgent, RemoteLog } from "@/lib/protocol";
 import type { UsageRecord } from "@/lib/workTypes";
 
@@ -33,14 +34,12 @@ export const NOT_CONNECTED = ["scraper", "creator"] as const;
 const WAITING = "Menunggu data Repliz…";
 const NO_SOURCE = "Belum terhubung — butuh sumber data (Repliz research/template perlu upgrade plan)";
 
-const INITIAL_AGENTS: Agent[] = [
-  { id: "manager", name: "Social Manager", role: "Orkestrator", color: "#6366f1", status: "idle", task: WAITING, idleIndex: 0, deskIndex: 0 },
-  { id: "scraper", name: "Social Scraper", role: "Riset & Scraping", color: "#10b981", status: "idle", task: NO_SOURCE, idleIndex: 1, deskIndex: 1 },
-  { id: "creator", name: "Content Creator", role: "Pembuatan Konten", color: "#f59e0b", status: "idle", task: NO_SOURCE, idleIndex: 2, deskIndex: 2 },
-  { id: "scheduler", name: "Scheduler", role: "Penjadwalan (Repliz)", color: "#ec4899", status: "idle", task: WAITING, idleIndex: 3, deskIndex: 3 },
-  { id: "community", name: "Community Manager", role: "Komentar & Chat (Repliz)", color: "#06b6d4", status: "idle", task: WAITING, idleIndex: 4, deskIndex: 4 },
-  { id: "analyst", name: "Analyst", role: "Analitik Performa", color: "#8b5cf6", status: "idle", task: WAITING, idleIndex: 5, deskIndex: 5 },
-];
+// Nama/peran/warna berasal dari satu sumber: lib/agentsMeta.ts
+const INITIAL_AGENTS: Agent[] = AGENT_META.map((m, i) => ({
+  id: m.id, name: m.name, role: m.role, color: m.color, status: "idle" as const,
+  task: (NOT_CONNECTED as readonly string[]).includes(m.id) ? NO_SOURCE : WAITING,
+  idleIndex: i, deskIndex: i,
+}));
 
 const MAX_LOGS = 50;
 let logSeq = 100;

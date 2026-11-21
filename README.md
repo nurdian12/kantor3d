@@ -46,7 +46,7 @@ Catatan produksi: gunakan HTTPS/`wss://` (tiket ada di query string), jalankan s
 Batasan: pembatas login & daftar tiket terpakai berada di memori satu proses (gunakan Redis bila multi-instance); satu password untuk semua pengguna, belum ada peran viewer/operator.
 
 ## Kantor media sosial — semua data dari Repliz
-Tim 6 agen (`src/lib/agentsMeta.ts`): **Social Manager**, **Social Scraper**, **Content Creator**, **Scheduler**, **Community Manager**, **Analyst**.
+Tim 6 agen (`src/lib/agentsMeta.ts`): **Nova** (Social Manager), **Radar** (Social Scraper), **Pixel** (Content Creator), **Orbit** (Scheduler), **Sapa** (Community Manager), **Kompas** (Analyst). Ganti nama/peran cukup di satu tempat: `src/lib/agentsMeta.ts` (+ `server/mock-server.mjs` bila memakai server mock).
 Aplikasi **tidak memakai data contoh/mock**: setiap tampilan berasal dari Repliz (baca-saja) atau dari runtime agen lewat WebSocket, dan bila sumbernya belum ada, tampilan memberi tahu dengan jelas.
 
 | Tab | Sumber nyata | Catatan |
