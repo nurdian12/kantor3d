@@ -5,7 +5,7 @@ import type { RemoteAgent, RemoteLog } from "@/lib/protocol";
 
 export type ViewMode = "3d" | "2d";
 export type Theme = "light" | "dark";
-export type Tab = "office" | "tasks" | "calendar" | "usage" | "memory" | "files" | "logs";
+export type Tab = "office" | "tasks" | "calendar" | "usage" | "memory" | "files" | "social" | "logs";
 export type Focus = "all" | "1" | "2";
 export type Connection = "offline" | "connecting" | "live";
 

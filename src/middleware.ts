@@ -12,5 +12,5 @@ export async function middleware(req: NextRequest) {
   return NextResponse.redirect(url);
 }
 
-// Lindungi halaman utama dan endpoint tiket; /login & /api/login tetap publik
-export const config = { matcher: ["/", "/api/ws-ticket"] };
+// Lindungi halaman utama, endpoint tiket, dan data Repliz; /login & /api/login tetap publik
+export const config = { matcher: ["/", "/api/ws-ticket", "/api/repliz"] };

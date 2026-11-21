@@ -10,10 +10,11 @@ import UsageView from "./views/UsageView";
 import MemoryView from "./views/MemoryView";
 import FilesView from "./views/FilesView";
 import LogsView from "./views/LogsView";
+import SocialView from "./views/SocialView";
 
 const TABS: ReadonlyArray<readonly [Tab, string, string]> = [
   ["office", "🏢", "Kantor"], ["tasks", "📋", "Tugas"], ["calendar", "🗓️", "Kalender"], ["usage", "📈", "Token"],
-  ["memory", "🧠", "Memori"], ["files", "📁", "File"], ["logs", "🖥️", "Log"],
+  ["memory", "🧠", "Memori"], ["files", "📁", "File"], ["social", "🌐", "Sosial"], ["logs", "🖥️", "Log"],
 ];
 import QuickPanel from "./QuickPanel";
 import Overview2D from "./Overview2D";
@@ -139,6 +140,7 @@ export default function Dashboard() {
           {tab === "usage" && <UsageView />}
           {tab === "memory" && <MemoryView />}
           {tab === "files" && <FilesView />}
+          {tab === "social" && <SocialView />}
           {tab === "logs" && <LogsView />}
         </main>
       )}

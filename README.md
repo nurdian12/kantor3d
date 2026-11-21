@@ -62,3 +62,12 @@ Navigasi tab di bawah header (data **mock**; kantor 3D tetap ter-mount saat berp
 - Log sistem mencerminkan log aktivitas agen dari WebSocket; tanpa WebSocket, baris sistem disimulasikan.
 - Biaya token memakai asumsi $3 / $15 per 1M token (input / output) — ubah `PRICE_IN`/`PRICE_OUT` di `UsageView.tsx`.
 - Data masih di memori browser (hilang saat reload). Untuk data nyata, ganti `lib/mockData.ts` dan `useWorkStore` dengan sumber server; protokol WebSocket belum memuat tugas/token/memori.
+
+## Integrasi Repliz (tab Sosial)
+Tab **Sosial** menampilkan data dari [Repliz](https://repliz.com) (platform manajemen media sosial): akun & status koneksi, jumlah posting terjadwal/diproses/berhasil/gagal, 10 posting berikutnya, posting gagal beserta pesan error, dan komentar yang menunggu balasan.
+
+- **Baca-saja.** Aplikasi hanya memanggil `GET /public/*`; tidak ada posting, balas, atau hapus (`src/lib/repliz.ts` menolak path lain).
+- Dipanggil dari server lewat `/api/repliz`; kredensial (`REPLIZ_TOKEN` atau `REPLIZ_BASIC_USER`/`REPLIZ_BASIC_PASS`) hanya dibaca dari env server. Respons sengaja tidak memuat email/nama pemilik.
+- Route dilindungi middleware login bila autentikasi aktif, di-cache 30 detik, dan tab me-refresh tiap 60 detik.
+- Di jaringan yang memakai proxy keluar, jalankan Node dengan `NODE_USE_ENV_PROXY=1` (fetch bawaan Node tidak membaca `HTTPS_PROXY`).
+- Spesifikasi API: `https://api.repliz.com/public` (Swagger).
