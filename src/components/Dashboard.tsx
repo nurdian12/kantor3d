@@ -71,7 +71,7 @@ export default function Dashboard() {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white/80 px-5 py-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/80">
         <div>
           <h1 className="text-lg font-bold tracking-tight">🛰️ AI Agent Mission Control</h1>
-          <p className="text-xs text-slate-500">Kantor media sosial · {social ? "Repliz terhubung" : "Repliz belum terhubung"} · {connection === "live" ? "agen real-time (WebSocket)" : connection === "connecting" ? "menghubungkan WebSocket…" : "status agen dari Repliz"}</p>
+          <p className="hidden text-xs text-slate-500 sm:block">Kantor media sosial · {social ? "Repliz terhubung" : "Repliz belum terhubung"} · {connection === "live" ? "agen real-time (WebSocket)" : connection === "connecting" ? "menghubungkan WebSocket…" : "status agen dari Repliz"}</p>
         </div>
         <div className="flex items-center gap-3">
           {tab === "office" && <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="group" aria-label="Mode tampilan">
@@ -98,7 +98,7 @@ export default function Dashboard() {
       </nav>
       {/* Kantor 3D tetap ter-mount (disembunyikan) agar state kamera/karakter tidak hilang saat pindah tab */}
       <main className={tab === "office" ? "flex min-h-0 flex-1 flex-col lg:flex-row" : "hidden"}>
-        <section className="relative min-h-[50vh] flex-1 overflow-hidden">
+        <section className="relative h-[42vh] shrink-0 overflow-hidden lg:h-auto lg:flex-1">
           <div className={viewMode === "3d" ? "h-full w-full" : "hidden"}><Scene3D active={tab === "office" && viewMode === "3d"} /></div>
           {viewMode === "2d" && <Overview2D />}
           {viewMode === "3d" && (
@@ -109,9 +109,9 @@ export default function Dashboard() {
             </div>
           )}
           {viewMode === "3d" && (
-            <div className="absolute right-4 top-4 flex flex-col items-end gap-1">
+            <div className="absolute right-4 top-[68px] flex flex-col items-end gap-1 sm:top-4">
               <div className="flex items-center gap-1 rounded-xl bg-white/80 p-1 shadow backdrop-blur dark:bg-slate-900/80" role="group" aria-label="Kualitas grafis 3D">
-                <span className="px-2 text-[11px] text-slate-500">Kualitas</span>
+                <span className="hidden px-2 text-[11px] text-slate-500 sm:inline">Kualitas</span>
                 {(Object.keys(QUALITY) as Quality[]).map((q) => <button key={q} onClick={() => pickQuality(q)} aria-pressed={quality === q} className={btn(quality === q)}>{QUALITY[q].label}</button>)}
               </div>
               <span className="rounded-md bg-slate-900/60 px-2 py-0.5 text-[10px] text-white">{fps ? `${fps} FPS` : "mengukur FPS…"}</span>
@@ -130,7 +130,7 @@ export default function Dashboard() {
           )}
           {viewMode === "3d" && <p className="pointer-events-none absolute bottom-3 left-4 rounded-md bg-slate-900/60 px-2 py-1 text-[11px] text-white">Drag: putar · Scroll: zoom · Klik karakter: kamera mengikuti & filter log</p>}
         </section>
-        <div className="max-h-[50vh] lg:max-h-none"><QuickPanel /></div>
+        <div className="min-h-0 flex-1 lg:flex-none"><QuickPanel /></div>
       </main>
       {tab !== "office" && (
         <main className="min-h-0 flex-1 overflow-hidden">

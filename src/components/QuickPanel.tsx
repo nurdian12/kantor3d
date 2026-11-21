@@ -26,7 +26,7 @@ export default function QuickPanel() {
   const visible = selectedId ? logs.filter((l) => l.agentId === selectedId) : logs;
 
   return (
-    <aside className="flex h-full w-full flex-col gap-4 overflow-hidden border-slate-200 bg-white/80 p-4 backdrop-blur dark:border-slate-700 dark:bg-slate-900/80 lg:w-[360px] lg:border-l">
+    <aside className="flex h-full w-full flex-col gap-4 overflow-y-auto overscroll-contain border-slate-200 bg-white/80 p-4 backdrop-blur dark:border-slate-700 dark:bg-slate-900/80 lg:w-[360px] lg:border-l">
       <div>
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Kru Agen ({agents.length})</h2>
         <div className="mb-3 flex gap-2 text-[11px]">
@@ -64,7 +64,7 @@ export default function QuickPanel() {
         </ul>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 flex-col">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Log Aktivitas{selectedId ? " (terfilter)" : ""}</h2>
           {connection !== "offline" ? (
@@ -73,7 +73,7 @@ export default function QuickPanel() {
             <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${social ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>{social ? `● Repliz ${new Date(social.fetchedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}` : "○ Repliz belum terhubung"}</span>
           )}
         </div>
-        <ul className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1">
+        <ul className="max-h-80 space-y-1.5 overflow-y-auto pr-1">
           {visible.map((l) => {
             const a = agents.find((x) => x.id === l.agentId);
             return (
