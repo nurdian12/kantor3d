@@ -39,7 +39,7 @@ export const useWorkStore = create<WorkState>((set) => ({
       const r = await fetch(`/api/repliz/stats${force ? "?refresh=1" : ""}`, { cache: "no-store" });
       const j = await r.json();
       if (r.ok) set({ stats: j, statsError: null, statsLoading: false });
-      else set({ statsError: j.message ?? "Gagal memuat statistik Repliz.", statsLoading: false });
+      else set({ statsError: j.message ?? "Gagal memuat statistik akun.", statsLoading: false });
     } catch { set({ statsError: "Tidak dapat menghubungi server.", statsLoading: false }); }
   },
   fetchSocial: async (force = false) => {
@@ -48,7 +48,7 @@ export const useWorkStore = create<WorkState>((set) => ({
       const r = await fetch(`/api/repliz${force ? "?refresh=1" : ""}`, { cache: "no-store" });
       const j = await r.json();
       if (r.ok) set({ social: j, socialError: null, socialLoading: false });
-      else set({ socialError: j.message ?? "Gagal memuat data Repliz.", socialLoading: false });
+      else set({ socialError: j.message ?? "Gagal memuat data jadwal.", socialLoading: false });
     } catch { set({ socialError: "Tidak dapat menghubungi server.", socialLoading: false }); }
   },
   moveTask: (id, status) => set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, status } : t)) })),

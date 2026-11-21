@@ -43,7 +43,7 @@ export default function CalendarView() {
       .then(({ ok, j }) => {
         if (stale) return;
         if (ok) { setPosts(j.posts); setNote(j.truncated ? `Menampilkan ${j.posts.length} dari ${j.total} posting (dibatasi).` : null); }
-        else { setPosts([]); setNote(j.message ?? "Gagal memuat jadwal Repliz."); }
+        else { setPosts([]); setNote(j.message ?? "Gagal memuat jadwal."); }
       })
       .catch(() => { if (!stale) { setPosts([]); setNote("Tidak dapat menghubungi server."); } })
       .finally(() => { if (!stale) setLoading(false); });
@@ -78,7 +78,7 @@ export default function CalendarView() {
             <button onClick={() => nav(1)} aria-label="Bulan berikutnya" className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm dark:bg-slate-800">→</button>
             <button onClick={() => { setCursor(new Date(today.getFullYear(), today.getMonth(), 1)); setSelected(new Date(today.getFullYear(), today.getMonth(), today.getDate())); }} className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm dark:bg-slate-800">Hari ini</button>
           </div>
-          <p className="text-xs text-slate-500">Sumber: Repliz (baca-saja){loading ? " · memuat…" : ` · ${filtered.length} posting`}</p>
+          <p className="text-xs text-slate-500">Sumber: jadwal (baca-saja){loading ? " · memuat…" : ` · ${filtered.length} posting`}</p>
         </div>
 
         <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter kalender">
@@ -92,7 +92,7 @@ export default function CalendarView() {
               className={`rounded-full px-3 py-1 text-xs font-medium ${platforms.includes(p) ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>{plat(p).icon} {plat(p).name}</button>
           ))}
         </div>
-        {note && <p className="mb-2 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs text-amber-700 dark:text-amber-300">Repliz: {note}</p>}
+        {note && <p className="mb-2 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs text-amber-700 dark:text-amber-300">Jadwal: {note}</p>}
 
         <div className="grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 text-xs dark:border-slate-700 dark:bg-slate-700" role="grid" aria-label="Kalender jadwal posting">
           {DAYS.map((d) => <div key={d} className="bg-slate-50 py-1.5 text-center font-semibold text-slate-500 dark:bg-slate-800">{d}</div>)}

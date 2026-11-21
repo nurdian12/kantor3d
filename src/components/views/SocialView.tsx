@@ -31,14 +31,14 @@ function WorkflowStrip({ data }: { data: SocialSummary }) {
   const agents = useMissionStore((s) => s.agents);
   const stats = useWorkStore((s) => s.stats);
   const followers = stats?.accounts.reduce((a, x) => a + (x.followers ?? 0), 0) ?? 0;
-  type Src = "Repliz" | "Belum terhubung";
+  type Src = "Jadwal" | "Belum terhubung";
   const stages: Array<{ agentId: string; stage: string; metric: string; src: Src }> = [
-    { agentId: "scraper", stage: "Riset", metric: "research Repliz butuh upgrade plan", src: "Belum terhubung" },
-    { agentId: "creator", stage: "Konten", metric: "template/content Repliz butuh upgrade plan", src: "Belum terhubung" },
-    { agentId: "scheduler", stage: "Jadwal", metric: `${data.schedule.pending} dalam antrean`, src: "Repliz" },
-    { agentId: "scheduler", stage: "Publikasi", metric: `${data.schedule.success} tayang · ${data.schedule.error} gagal`, src: "Repliz" },
-    { agentId: "community", stage: "Interaksi", metric: `${data.comments.total} komentar menunggu`, src: "Repliz" },
-    { agentId: "analyst", stage: "Analitik", metric: stats ? `${stats.accounts.length} akun · ${fmtTokens(followers)} pengikut` : "memuat statistik…", src: "Repliz" },
+    { agentId: "scraper", stage: "Riset", metric: "riset di layanan jadwal butuh upgrade plan", src: "Belum terhubung" },
+    { agentId: "creator", stage: "Konten", metric: "template/konten di layanan jadwal butuh upgrade plan", src: "Belum terhubung" },
+    { agentId: "scheduler", stage: "Antrean", metric: `${data.schedule.pending} dalam antrean`, src: "Jadwal" },
+    { agentId: "scheduler", stage: "Publikasi", metric: `${data.schedule.success} tayang · ${data.schedule.error} gagal`, src: "Jadwal" },
+    { agentId: "community", stage: "Interaksi", metric: `${data.comments.total} komentar menunggu`, src: "Jadwal" },
+    { agentId: "analyst", stage: "Analitik", metric: stats ? `${stats.accounts.length} akun · ${fmtTokens(followers)} pengikut` : "memuat statistik…", src: "Jadwal" },
   ];
   return (
     <section className={`${card} p-4`} aria-label="Alur kerja">
@@ -72,18 +72,18 @@ export default function SocialView() {
 
   if (err && !data) return (
     <div className="p-4"><div className={`${card} max-w-xl space-y-2 p-5`}>
-      <h2 className="text-sm font-semibold">Repliz belum terhubung</h2>
+      <h2 className="text-sm font-semibold">Jadwal belum terhubung</h2>
       <p className="text-sm text-slate-600 dark:text-slate-300">{err}</p>
       <button onClick={() => load(true)} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white">Coba lagi</button>
     </div></div>
   );
-  if (!data) return <p className="p-6 text-sm text-slate-500">{loading ? "Memuat data Repliz…" : ""}</p>;
+  if (!data) return <p className="p-6 text-sm text-slate-500">{loading ? "Memuat data jadwal…" : ""}</p>;
 
   const connected = data.accounts.filter((a) => a.isConnected).length;
   return (
     <div className="h-full space-y-4 overflow-auto p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-slate-500">Sumber: Repliz (baca-saja) · plan {data.plan?.name ?? "—"} · diperbarui {new Date(data.fetchedAt).toLocaleTimeString("id-ID")}</p>
+        <p className="text-xs text-slate-500">Sumber: jadwal (baca-saja) · plan {data.plan?.name ?? "—"} · diperbarui {new Date(data.fetchedAt).toLocaleTimeString("id-ID")}</p>
         <button onClick={() => load(true)} disabled={loading} className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium disabled:opacity-50 dark:bg-slate-800">{loading ? "Memuat…" : "↻ Segarkan"}</button>
       </div>
 

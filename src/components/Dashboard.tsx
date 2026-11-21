@@ -72,7 +72,7 @@ export default function Dashboard() {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white/80 px-5 py-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/80">
         <div>
           <h1 className="text-lg font-bold tracking-tight">🛰️ AI Agent Mission Control</h1>
-          <p className="hidden text-xs text-slate-500 sm:block">Kantor media sosial · {social ? "Repliz terhubung" : "Repliz belum terhubung"} · {connection === "live" ? "agen real-time (WebSocket)" : connection === "connecting" ? "menghubungkan WebSocket…" : "status agen dari Repliz"}</p>
+          <p className="hidden text-xs text-slate-500 sm:block">Kantor media sosial · {social ? "Jadwal terhubung" : "Jadwal belum terhubung"} · {connection === "live" ? "agen real-time (WebSocket)" : connection === "connecting" ? "menghubungkan WebSocket…" : "status agen dari jadwal"}</p>
         </div>
         <div className="flex items-center gap-3">
           {tab === "office" && <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="group" aria-label="Mode tampilan">

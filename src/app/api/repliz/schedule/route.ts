@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     return NextResponse.json(await getScheduleRange(from.toISOString(), to.toISOString()), { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     if (e instanceof ReplizError && (e.status === 401 || e.status === 403))
-      return NextResponse.json({ error: "auth", message: "Kredensial Repliz belum diset atau ditolak (REPLIZ_BASIC_USER/REPLIZ_BASIC_PASS di .env.local)." }, { status: 502 });
-    return NextResponse.json({ error: "upstream", message: "Gagal menghubungi Repliz." }, { status: 502 });
+      return NextResponse.json({ error: "auth", message: "Kredensial layanan jadwal belum diset atau ditolak (REPLIZ_BASIC_USER/REPLIZ_BASIC_PASS di .env.local)." }, { status: 502 });
+    return NextResponse.json({ error: "upstream", message: "Gagal menghubungi layanan jadwal." }, { status: 502 });
   }
 }
