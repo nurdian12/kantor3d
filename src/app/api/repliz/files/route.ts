@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 }
 
 function fail(e: unknown) {
-  if (e instanceof ReplizError && (e.status === 401 || e.status === 403)) return NextResponse.json({ error: "auth", message: "Kredensial Repliz belum diset atau ditolak (REPLIZ_TOKEN)." }, { status: 502 });
+  if (e instanceof ReplizError && (e.status === 401 || e.status === 403)) return NextResponse.json({ error: "auth", message: "Kredensial Repliz belum diset atau ditolak (REPLIZ_BASIC_USER/REPLIZ_BASIC_PASS)." }, { status: 502 });
   if (e instanceof ReplizError && e.status === 402) return NextResponse.json({ error: "plan", message: "Fitur ini membutuhkan upgrade plan Repliz." }, { status: 502 });
   return NextResponse.json({ error: "upstream", message: "Gagal menghubungi Repliz." }, { status: 502 });
 }

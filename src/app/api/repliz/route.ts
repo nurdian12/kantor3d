@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     return NextResponse.json(await getSocialSummary(force), { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     if (e instanceof ReplizError && (e.status === 401 || e.status === 403))
-      return NextResponse.json({ error: "auth", message: "Kredensial Repliz belum diset atau ditolak. Isi REPLIZ_TOKEN (atau REPLIZ_BASIC_USER/REPLIZ_BASIC_PASS) di .env.local." }, { status: 502 });
+      return NextResponse.json({ error: "auth", message: "Kredensial Repliz belum diset atau ditolak. Isi REPLIZ_BASIC_USER (Access Key) dan REPLIZ_BASIC_PASS (Secret Key) di .env.local." }, { status: 502 });
     return NextResponse.json({ error: "upstream", message: "Gagal menghubungi Repliz. Coba lagi sebentar." }, { status: 502 });
   }
 }

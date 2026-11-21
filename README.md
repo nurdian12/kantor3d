@@ -66,7 +66,7 @@ Aplikasi **tidak memakai data contoh/mock**: setiap tampilan berasal dari Repliz
 **Keterbatasan akun Repliz saat ini** (HTTP 402 *upgrade plan*): `content`, `chat`, `template`, `automation`, `watcher`, `listener`, `report`, dan `research` TikTok/Threads. Karena itu Scraper & Creator belum bisa dihubungkan; setelah plan naik, endpoint tersebut bisa disambungkan.
 
 ### Integrasi Repliz (server, baca-saja)
-- Dipanggil dari server lewat `/api/repliz/*`; kredensial (`REPLIZ_TOKEN` atau `REPLIZ_BASIC_USER`/`REPLIZ_BASIC_PASS`) hanya dari env server. Hanya `GET /public/*` yang diizinkan (`src/lib/repliz.ts`). Respons tidak memuat email/nama pemilik.
+- Dipanggil dari server lewat `/api/repliz/*`; kredensial (**Access Key + Secret Key** Repliz sebagai `REPLIZ_BASIC_USER`/`REPLIZ_BASIC_PASS`; `REPLIZ_TOKEN` hanya untuk bearer OAuth 1 jam) hanya dari env server. Hanya `GET /public/*` yang diizinkan (`src/lib/repliz.ts`). Respons tidak memuat email/nama pemilik.
 - Route dilindungi middleware login bila autentikasi aktif; ringkasan di-cache 30 dtk, jadwal 60 dtk, statistik 10 menit.
 - Di jaringan yang memakai proxy keluar, jalankan Node dengan `NODE_USE_ENV_PROXY=1`.
 - Spesifikasi API: `https://api.repliz.com/public` (Swagger).
