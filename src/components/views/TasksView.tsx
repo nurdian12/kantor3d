@@ -50,7 +50,7 @@ function TaskCard({ t, onDragStart }: { t: Task; onDragStart: (id: string) => vo
       </div>
       {/* tombol pindah = alternatif keyboard/layar sentuh untuk drag & drop */}
       {fromRepliz ? (
-        <p className="mt-2 border-t border-indigo-200/60 pt-2 text-[10px] font-medium text-indigo-600 dark:border-indigo-500/20 dark:text-indigo-300">🔒 Dari Jadwal · baca-saja</p>
+        <p className="mt-2 border-t border-indigo-200/60 pt-2 text-[10px] font-medium text-indigo-600 dark:border-indigo-500/20 dark:text-indigo-300">🔒 Dari Repliz · baca-saja</p>
       ) : (
       <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-700">
         <div className="flex gap-1">
@@ -82,8 +82,8 @@ export default function TasksView() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <AgentFilter ids={AGENT_META.map((a) => a.id)} selected={agents} onToggle={(id) => setAgents((s) => toggleIn(s, id))} onClear={() => setAgents([])} />
-          <button onClick={() => setShowRepliz((v) => !v)} aria-pressed={showRepliz} disabled={!social} title={social ? "" : "Jadwal belum terhubung"}
-            className={`rounded-full px-3 py-1 text-xs font-medium disabled:opacity-40 ${showRepliz && social ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>🌐 Alur Jadwal{social ? ` (${rz.length})` : ""}</button>
+          <button onClick={() => setShowRepliz((v) => !v)} aria-pressed={showRepliz} disabled={!social} title={social ? "" : "Repliz belum terhubung"}
+            className={`rounded-full px-3 py-1 text-xs font-medium disabled:opacity-40 ${showRepliz && social ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>🌐 Alur Repliz{social ? ` (${rz.length})` : ""}</button>
         </div>
         <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (title.trim()) { addTask({ title: title.trim(), agentId, priority }); setTitle(""); } }}>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Tugas baru…" aria-label="Judul tugas baru"

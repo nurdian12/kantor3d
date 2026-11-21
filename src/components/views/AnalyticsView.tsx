@@ -54,7 +54,7 @@ export default function AnalyticsView() {
 
   if (err && !stats) return (
     <div className="p-4"><div className={`${card} max-w-xl space-y-2 p-5`}>
-      <h2 className="text-sm font-semibold">Statistik belum tersedia</h2>
+      <h2 className="text-sm font-semibold">Statistik Repliz belum tersedia</h2>
       <p className="text-sm text-slate-600 dark:text-slate-300">{err}</p>
       <button onClick={() => fetchStats(true)} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white">Coba lagi</button>
     </div></div>
@@ -67,7 +67,7 @@ export default function AnalyticsView() {
   return (
     <div className="h-full space-y-4 overflow-auto p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-slate-500">Sumber: jadwal · statistik 30 hari terakhir · {stats.accounts.length} akun terhubung{stats.failed ? ` (${stats.failed} gagal dimuat)` : ""} · diperbarui {new Date(stats.fetchedAt).toLocaleTimeString("id-ID")}</p>
+        <p className="text-xs text-slate-500">Sumber: Repliz · statistik 30 hari terakhir · {stats.accounts.length} akun terhubung{stats.failed ? ` (${stats.failed} gagal dimuat)` : ""} · diperbarui {new Date(stats.fetchedAt).toLocaleTimeString("id-ID")}</p>
         <button onClick={() => fetchStats(true)} disabled={loading} className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium disabled:opacity-50 dark:bg-slate-800">{loading ? "Memuat…" : "↻ Segarkan"}</button>
       </div>
 
@@ -75,7 +75,7 @@ export default function AnalyticsView() {
         <Stat title="Pengikut / subscriber" value={fmtTokens(view.followers)} sub={`di ${stats.accounts.length} akun`} />
         <Stat title="Views + jangkauan (30 hari)" value={fmtTokens(view.metric)} sub="gabungan; definisi metrik beda per platform" />
         <Stat title="Platform teratas" value={best ? plat(best.p).name : "—"} sub={best ? `${fmtTokens(best.metric)} ${best.metricLabel.toLowerCase()}` : undefined} />
-        <Stat title="Hari terpantau" value={String(view.buckets.length)} sub="deret harian dari jadwal" />
+        <Stat title="Hari terpantau" value={String(view.buckets.length)} sub="deret harian dari Repliz" />
       </div>
 
       <section className={`${card} p-4`}>

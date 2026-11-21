@@ -33,8 +33,8 @@ const toLog = (l: RemoteLog): LogEntry => ({ id: l.id ?? ++logSeq, agentId: l.ag
 
 /** Agen yang belum punya sumber data nyata (Repliz: research/template membutuhkan upgrade plan) */
 export const NOT_CONNECTED = ["scraper", "creator"] as const;
-const WAITING = "Menunggu data jadwal…";
-const NO_SOURCE = "Belum terhubung — butuh sumber data (riset/template di layanan jadwal perlu upgrade plan)";
+const WAITING = "Menunggu data Repliz…";
+const NO_SOURCE = "Belum terhubung — butuh sumber data (Repliz research/template perlu upgrade plan)";
 
 // Nama/peran/warna berasal dari satu sumber: lib/agentsMeta.ts
 const INITIAL_AGENTS: Agent[] = AGENT_META.map((m, i) => ({

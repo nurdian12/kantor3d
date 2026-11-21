@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-const SOURCES = ["app", "jadwal", "ws-server"];
+const SOURCES = ["app", "repliz", "ws-server"];
 import type { SysLevel, SysLine } from "@/lib/workTypes";
 import { useWorkStore } from "@/store/useWorkStore";
 import { useMissionStore } from "@/store/useMissionStore";
@@ -65,7 +65,7 @@ export default function LogsView() {
             <span className="text-violet-400">[{l.source}]</span> <span className={l.level === "error" ? "text-red-300" : ""}>{l.message}</span>
           </div>
         ))}
-        {shown.length === 0 && <p className="text-slate-600">Menunggu log… {connection === "live" ? "(WebSocket aktif)" : "(hanya peristiwa nyata: sinkron jadwal, WebSocket, perubahan status agen)"}</p>}
+        {shown.length === 0 && <p className="text-slate-600">Menunggu log… {connection === "live" ? "(WebSocket aktif)" : "(hanya peristiwa nyata: sinkron Repliz, WebSocket, perubahan status agen)"}</p>}
         {!paused && <span className="inline-block h-3.5 w-2 translate-y-0.5 animate-pulse bg-emerald-400" />}
       </div>
     </div>

@@ -41,7 +41,7 @@ export function deriveAgentStates(s: SocialSummary, stats: StatsSummary | null, 
 
   const followers = stats?.accounts.reduce((a, x) => a + (x.followers ?? 0), 0) ?? 0;
   const analyst: State = statsError
-    ? { status: "error", task: "Gagal memuat statistik akun dari layanan jadwal" }
+    ? { status: "error", task: "Gagal memuat statistik akun dari Repliz" }
     : stats
       ? { status: "idle", task: `${stats.accounts.length} akun dipantau · ${k(followers)} pengikut/subscriber` }
       : { status: "idle", task: "Memuat statistik akun…" };

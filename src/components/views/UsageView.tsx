@@ -99,7 +99,7 @@ export default function UsageView() {
     <div className="p-4">
       <div className={`${card} max-w-2xl space-y-3 p-5`}>
         <h2 className="text-sm font-semibold">Monitor token belum terhubung</h2>
-        <p className="text-sm text-slate-600 dark:text-slate-300">Layanan jadwal tidak mencatat pemakaian token AI, jadi tab ini hanya terisi dari runtime agen Anda sendiri lewat WebSocket{connection === "live" ? "." : " (saat ini WebSocket tidak terhubung)."}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300">Repliz tidak mencatat pemakaian token AI, jadi tab ini hanya terisi dari runtime agen Anda sendiri lewat WebSocket{connection === "live" ? "." : " (saat ini WebSocket tidak terhubung)."}</p>
         <p className="text-xs text-slate-500">Kirim pesan berikut dari server WebSocket (satu rekaman per agen per interval, <code>t</code> = epoch ms):</p>
         <pre className="overflow-auto rounded-lg bg-slate-950 p-3 font-mono text-[11px] leading-relaxed text-slate-200">{`{ "type": "usage",\n  "records": [\n    { "t": 1795219200000, "agentId": "creator", "input": 41200, "output": 9800 }\n  ] }`}</pre>
       </div>

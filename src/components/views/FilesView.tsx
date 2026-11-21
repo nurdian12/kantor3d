@@ -38,7 +38,7 @@ export default function FilesView() {
   useEffect(() => { load(); }, [load]);
   useEffect(() => { const id = setTimeout(() => { setSearch(q.trim()); setPage(1); }, 400); return () => clearTimeout(id); }, [q]);
 
-  if (err && !data) return <div className="p-4"><div className={`${card} max-w-xl space-y-2 p-5`}><h2 className="text-sm font-semibold">File belum tersedia</h2><p className="text-sm text-slate-600 dark:text-slate-300">{err}</p><button onClick={load} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white">Coba lagi</button></div></div>;
+  if (err && !data) return <div className="p-4"><div className={`${card} max-w-xl space-y-2 p-5`}><h2 className="text-sm font-semibold">File Repliz belum tersedia</h2><p className="text-sm text-slate-600 dark:text-slate-300">{err}</p><button onClick={load} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white">Coba lagi</button></div></div>;
 
   const items = (data?.items ?? []).filter((f) => type === "all" || kind(f.mimetype) === type);
   const st = data?.storage;
@@ -49,7 +49,7 @@ export default function FilesView() {
         {(["all", "image", "video"] as const).map((t) => (
           <button key={t} onClick={() => setType(t)} aria-pressed={type === t} className={`rounded-full px-3 py-1 text-xs font-medium ${type === t ? "bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>{t === "all" ? "Semua" : t === "image" ? "🖼️ Gambar" : "🎬 Video"}</button>
         ))}
-        <p className="ml-auto text-xs text-slate-500">Sumber: penyimpanan jadwal · {data ? `${data.total.toLocaleString("id-ID")} file` : "…"}{st ? ` · ${size(st.used)} / ${size(st.total)}` : ""}</p>
+        <p className="ml-auto text-xs text-slate-500">Sumber: Repliz storage · {data ? `${data.total.toLocaleString("id-ID")} file` : "…"}{st ? ` · ${size(st.used)} / ${size(st.total)}` : ""}</p>
       </div>
       {st && <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800" aria-label="Pemakaian penyimpanan"><div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.min(100, (st.used / Math.max(st.total, 1)) * 100)}%` }} /></div>}
 
