@@ -28,12 +28,12 @@ function verifyTicket(token) {
 }
 
 const agents = [
-  { id: "lead", name: "Lead Agent", role: "Orkestrator", status: "working", task: "Mengoordinasi sprint" },
-  { id: "engineer", name: "Lead Engineer", role: "Engineering", status: "working", task: "Refactor modul auth" },
-  { id: "researcher", name: "Content Researcher", role: "Riset Konten", status: "idle", task: "Menunggu brief" },
-  { id: "designer", name: "Product Designer", role: "Desain", status: "working", task: "Membuat wireframe dashboard" },
-  { id: "qa", name: "QA Engineer", role: "Quality", status: "idle", task: "Menunggu build baru" },
-  { id: "analyst", name: "Data Analyst", role: "Analitik", status: "working", task: "Menyusun laporan metrik" },
+  { id: "manager", name: "Social Manager", role: "Orkestrator", status: "working", task: "Menyusun kalender konten" },
+  { id: "scraper", name: "Social Scraper", role: "Riset & Scraping", status: "working", task: "Scraping tren TikTok & Threads" },
+  { id: "creator", name: "Content Creator", role: "Pembuatan Konten", status: "idle", task: "Menunggu brief" },
+  { id: "scheduler", name: "Scheduler", role: "Penjadwalan (Repliz)", status: "working", task: "Mengisi antrean posting" },
+  { id: "community", name: "Community Manager", role: "Komentar & Chat (Repliz)", status: "idle", task: "Tidak ada komentar menunggu" },
+  { id: "analyst", name: "Analyst", role: "Analitik Performa", status: "idle", task: "Menunggu data baru" },
 ];
 const logs = [];
 let seq = 0;

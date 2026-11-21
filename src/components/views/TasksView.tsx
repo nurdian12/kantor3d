@@ -3,7 +3,8 @@ import { useMemo, useState } from "react";
 import { AGENT_META, agentMeta } from "@/lib/agentsMeta";
 import type { Priority, Task, TaskStatus } from "@/lib/workTypes";
 import { useWorkStore } from "@/store/useWorkStore";
-import { AgentDot, AgentFilter, card, toggleIn } from "./ui";
+import { AgentDot, AgentFilter, card, plat, toggleIn } from "./ui";
+import type { SocialSummary } from "@/lib/repliz";
 
 const COLUMNS: Array<{ id: TaskStatus; title: string; hint: string; dot: string }> = [
   { id: "todo", title: "To Do", hint: "Belum dimulai", dot: "bg-slate-400" },
@@ -19,18 +20,38 @@ const PRIO_STYLE: Record<Priority, string> = {
   low: "bg-slate-500/15 text-slate-600 dark:text-slate-300",
 };
 
+/** Alur kerja dari Repliz -> kartu Kanban (baca-saja). Pemetaan kolom:
+ *  To Do = perlu tindakan (posting gagal -> Scheduler, komentar menunggu -> Community)
+ *  In Progress = sedang dipublikasikan · Ready = antrean tayang berikutnya · Done = tayang 24 jam terakhir */
+function replizCards(s: SocialSummary): Task[] {
+  const hh = (iso: string) => new Date(iso).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const mk = (id: string, agentId: string, status: TaskStatus, priority: Priority, title: string, note?: string): Task => ({ id: `rz-${id}`, agentId, status, priority, title, note, createdAt: 0, source: "repliz" });
+  return [
+    ...s.failed.slice(0, 5).map((f) => mk(`f${f.id}`, "scheduler", "todo", "high", `Jadwalkan ulang: ${f.title || "(tanpa judul)"}`, `${plat(f.platform).icon} ${f.account} · gagal ${hh(f.scheduleAt)}${f.errorMessage ? ` · ${f.errorMessage}` : ""}`)),
+    ...s.comments.items.slice(0, 5).map((c) => mk(`c${c.id}`, "community", "todo", "medium", `Balas komentar: “${c.text || "…"}”`, `${plat(c.platform).icon} ${c.account} · ${c.contentTitle}`)),
+    ...(s.schedule.process > 0 ? [mk("proc", "scheduler", "in_progress", "high", `Memublikasikan ${s.schedule.process} posting`)] : []),
+    ...s.upcoming.slice(0, 5).map((u) => mk(`u${u.id}`, "scheduler", "ready", "low", u.title || "(tanpa judul)", `${plat(u.platform).icon} ${u.account} · tayang ${hh(u.scheduleAt)}`)),
+    ...s.recentDone.map((d) => mk(`d${d.id}`, "scheduler", "done", "low", `Tayang: ${d.title || "(tanpa judul)"}`, `${plat(d.platform).icon} ${d.account} · ${hh(d.scheduleAt)}`)),
+  ];
+}
+
 function TaskCard({ t, onDragStart }: { t: Task; onDragStart: (id: string) => void }) {
   const { moveTask, removeTask } = useWorkStore();
   const i = ORDER.indexOf(t.status);
+  const fromRepliz = t.source === "repliz";
   return (
-    <li draggable onDragStart={(e) => { e.dataTransfer.setData("text/plain", t.id); e.dataTransfer.effectAllowed = "move"; onDragStart(t.id); }}
-      className="cursor-grab rounded-xl border border-slate-200 bg-white p-3 shadow-sm active:cursor-grabbing dark:border-slate-700 dark:bg-slate-800">
+    <li draggable={!fromRepliz} onDragStart={(e) => { if (fromRepliz) return; e.dataTransfer.setData("text/plain", t.id); e.dataTransfer.effectAllowed = "move"; onDragStart(t.id); }}
+      className={`rounded-xl border p-3 shadow-sm ${fromRepliz ? "border-indigo-200 bg-indigo-50/60 dark:border-indigo-500/30 dark:bg-indigo-500/10" : "cursor-grab border-slate-200 bg-white active:cursor-grabbing dark:border-slate-700 dark:bg-slate-800"}`}>
       <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{t.title}</p>
+      {t.note && <p className="mt-1 line-clamp-2 text-[11px] text-slate-500 dark:text-slate-400">{t.note}</p>}
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400"><AgentDot id={t.agentId} /><span className="truncate">{agentMeta(t.agentId).name}</span></span>
         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PRIO_STYLE[t.priority]}`}>{PRIO[t.priority]}</span>
       </div>
       {/* tombol pindah = alternatif keyboard/layar sentuh untuk drag & drop */}
+      {fromRepliz ? (
+        <p className="mt-2 border-t border-indigo-200/60 pt-2 text-[10px] font-medium text-indigo-600 dark:border-indigo-500/20 dark:text-indigo-300">🔒 Dari Repliz · baca-saja</p>
+      ) : (
       <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-700">
         <div className="flex gap-1">
           <button disabled={i === 0} onClick={() => moveTask(t.id, ORDER[i - 1])} aria-label="Pindah ke kolom sebelumnya" className="rounded px-1.5 py-0.5 text-xs text-slate-500 hover:bg-slate-100 disabled:opacity-30 dark:hover:bg-slate-700">←</button>
@@ -38,12 +59,14 @@ function TaskCard({ t, onDragStart }: { t: Task; onDragStart: (id: string) => vo
         </div>
         <button onClick={() => removeTask(t.id)} aria-label={`Hapus tugas ${t.title}`} className="rounded px-1.5 py-0.5 text-xs text-slate-400 hover:bg-red-500/10 hover:text-red-500">Hapus</button>
       </div>
+      )}
     </li>
   );
 }
 
 export default function TasksView() {
-  const { tasks, moveTask, addTask } = useWorkStore();
+  const { tasks, moveTask, addTask, social } = useWorkStore();
+  const [showRepliz, setShowRepliz] = useState(true);
   const [agents, setAgents] = useState<string[]>([]);
   const [dragId, setDragId] = useState<string | null>(null);
   const [over, setOver] = useState<TaskStatus | null>(null);
@@ -51,12 +74,17 @@ export default function TasksView() {
   const [agentId, setAgentId] = useState(AGENT_META[0].id);
   const [priority, setPriority] = useState<Priority>("medium");
 
-  const shown = useMemo(() => tasks.filter((t) => agents.length === 0 || agents.includes(t.agentId)), [tasks, agents]);
+  const rz = useMemo(() => (social && showRepliz ? replizCards(social) : []), [social, showRepliz]);
+  const shown = useMemo(() => [...rz, ...tasks].filter((t) => agents.length === 0 || agents.includes(t.agentId)), [tasks, rz, agents]);
 
   return (
     <div className="flex h-full flex-col gap-4 overflow-hidden p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <AgentFilter ids={AGENT_META.map((a) => a.id)} selected={agents} onToggle={(id) => setAgents((s) => toggleIn(s, id))} onClear={() => setAgents([])} />
+        <div className="flex flex-wrap items-center gap-3">
+          <AgentFilter ids={AGENT_META.map((a) => a.id)} selected={agents} onToggle={(id) => setAgents((s) => toggleIn(s, id))} onClear={() => setAgents([])} />
+          <button onClick={() => setShowRepliz((v) => !v)} aria-pressed={showRepliz} disabled={!social} title={social ? "" : "Repliz belum terhubung"}
+            className={`rounded-full px-3 py-1 text-xs font-medium disabled:opacity-40 ${showRepliz && social ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>🌐 Alur Repliz{social ? ` (${rz.length})` : ""}</button>
+        </div>
         <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (title.trim()) { addTask({ title: title.trim(), agentId, priority }); setTitle(""); } }}>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Tugas baru…" aria-label="Judul tugas baru"
             className="w-48 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-400 dark:border-slate-600 dark:bg-slate-800" />

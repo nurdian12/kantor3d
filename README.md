@@ -71,3 +71,20 @@ Tab **Sosial** menampilkan data dari [Repliz](https://repliz.com) (platform mana
 - Route dilindungi middleware login bila autentikasi aktif, di-cache 30 detik, dan tab me-refresh tiap 60 detik.
 - Di jaringan yang memakai proxy keluar, jalankan Node dengan `NODE_USE_ENV_PROXY=1` (fetch bawaan Node tidak membaca `HTTPS_PROXY`).
 - Spesifikasi API: `https://api.repliz.com/public` (Swagger).
+
+## Kantor media sosial (Repliz sebagai alur kerja)
+Kantor ini mengelola media sosial. Tim 6 agen (`src/lib/agentsMeta.ts`): **Social Manager** (orkestrator), **Social Scraper** (riset & scraping), **Content Creator** (pembuatan konten), **Scheduler** (penjadwalan/publikasi via Repliz), **Community Manager** (komentar & chat via Repliz), **Analyst** (performa).
+
+Repliz bukan "agen", jadi kondisinya dipetakan ke alur kerja (semua **baca-saja**):
+
+| Tahap | Agen | Sumber |
+|---|---|---|
+| Riset → Konten → Analitik | Scraper, Creator, Analyst | mock (Kanban/cron/memori lokal) |
+| Jadwal → Publikasi | Scheduler | Repliz `schedule` |
+| Interaksi | Community Manager | Repliz `comment` |
+
+- **Status agen dari Repliz** (`src/lib/replizAgents.ts`, polling 60 dtk, hanya saat WebSocket tidak `live`): Scheduler = *Error* bila ada posting gagal dalam 72 jam terakhir, *Working* bila sedang diproses/tayang <30 menit lagi, selain itu *Idle*. Community Manager = *Working* selama ada komentar menunggu. Agen lain tetap disimulasikan/dari WebSocket.
+- **Kalender**: lapisan "📣 Posting Repliz" (rentang 6 minggu terlihat, `/api/repliz/schedule`, maks. 600 posting) menampilkan ringkasan status per hari (⏳ terjadwal · ⚙ diproses · ✓ tayang · ✗ gagal) dan daftar per hari beserta pesan error; bisa disembunyikan, berdampingan dengan cron agen.
+- **Tugas (Kanban)**: kartu "Alur Repliz" read-only — To Do = posting gagal (Scheduler) & komentar menunggu (Community); In Progress = sedang dipublikasikan; Ready = antrean tayang berikutnya; Done = tayang 24 jam terakhir.
+- **Sosial**: strip *Alur kerja kantor* (6 tahap, status agen + angka, label Repliz/Mock) di atas ringkasan akun, jadwal, kegagalan, dan komentar.
+- Belum ada tulis ke Repliz (jadwalkan ulang, balas komentar, buat posting): itu tindakan keluar yang perlu konfirmasi eksplisit — lihat saran lanjutan.

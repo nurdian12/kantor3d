@@ -41,7 +41,7 @@ function Row({ node, depth, open, toggle, selected, select }: { node: Node; dept
 
 export default function FilesView() {
   const tree = useMemo(buildTree, []);
-  const [open, setOpen] = useState<Set<string>>(() => new Set(["lead", "engineer", "lead/reports"]));
+  const [open, setOpen] = useState<Set<string>>(() => new Set(["manager", "creator", "manager/reports"]));
   const [selected, setSelected] = useState<string | null>(FILES[0].path);
   const file = FILES.find((f) => f.path === selected);
   const toggle = (p: string) => setOpen((s) => { const n = new Set(s); if (n.has(p)) n.delete(p); else n.add(p); return n; });

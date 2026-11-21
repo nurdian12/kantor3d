@@ -1,6 +1,8 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
 import type { SocialSummary } from "@/lib/repliz";
+import { agentMeta } from "@/lib/agentsMeta";
+import { useMissionStore } from "@/store/useMissionStore";
+import { useWorkStore } from "@/store/useWorkStore";
 import { card } from "./ui";
 
 const PLATFORM: Record<string, { icon: string; name: string }> = {
@@ -22,23 +24,51 @@ function Stat({ title, value, sub, tone }: { title: string; value: number | stri
   );
 }
 
+const STAGE_DOT = { working: "bg-emerald-500", idle: "bg-sky-500", error: "bg-red-500 animate-pulse" } as const;
+
+/** Alur kerja kantor: tiap tahap dipegang satu agen; angka Repliz bila tahap terkait Repliz, selain itu dari Kanban lokal */
+function WorkflowStrip({ data }: { data: SocialSummary }) {
+  const agents = useMissionStore((s) => s.agents);
+  const tasks = useWorkStore((s) => s.tasks);
+  const open = (id: string) => tasks.filter((t) => t.agentId === id && t.status !== "done").length;
+  const stages: Array<{ agentId: string; stage: string; metric: string; src: "Repliz" | "Mock" }> = [
+    { agentId: "scraper", stage: "Riset", metric: `${open("scraper")} tugas aktif`, src: "Mock" },
+    { agentId: "creator", stage: "Konten", metric: `${open("creator")} draf berjalan`, src: "Mock" },
+    { agentId: "scheduler", stage: "Jadwal", metric: `${data.schedule.pending} dalam antrean`, src: "Repliz" },
+    { agentId: "scheduler", stage: "Publikasi", metric: `${data.schedule.success} tayang · ${data.schedule.error} gagal`, src: "Repliz" },
+    { agentId: "community", stage: "Interaksi", metric: `${data.comments.total} komentar menunggu`, src: "Repliz" },
+    { agentId: "analyst", stage: "Analitik", metric: `${open("analyst")} analisis berjalan`, src: "Mock" },
+  ];
+  return (
+    <section className={`${card} p-4`} aria-label="Alur kerja">
+      <h2 className="mb-3 text-sm font-semibold">Alur kerja kantor</h2>
+      <ol className="grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
+        {stages.map((st, i) => {
+          const ag = agents.find((a) => a.id === st.agentId);
+          return (
+            <li key={st.stage} className="relative rounded-xl border border-slate-200 p-3 text-xs dark:border-slate-700">
+              <p className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-slate-500"><span>{i + 1}. {st.stage}</span><span className={st.src === "Repliz" ? "text-indigo-500" : "opacity-60"}>{st.src}</span></p>
+              <p className="mt-1 flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-100">
+                {ag && <span className={`h-2 w-2 shrink-0 rounded-full ${STAGE_DOT[ag.status]}`} title={ag.status} />}<span className="truncate">{agentMeta(st.agentId).name}</span>
+              </p>
+              <p className="mt-1 text-slate-600 dark:text-slate-400">{st.metric}</p>
+              {i < stages.length - 1 && <span aria-hidden className="absolute -right-2 top-1/2 hidden -translate-y-1/2 text-slate-400 xl:block">→</span>}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
 export default function SocialView() {
-  const [data, setData] = useState<SocialSummary | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const data = useWorkStore((s) => s.social);
+  const err = useWorkStore((s) => s.socialError);
+  const loading = useWorkStore((s) => s.socialLoading);
+  const fetchSocial = useWorkStore((s) => s.fetchSocial);
+  const load = (force = false) => fetchSocial(force);
 
-  const load = useCallback(async (force = false) => {
-    setLoading(true);
-    try {
-      const r = await fetch(`/api/repliz${force ? "?refresh=1" : ""}`, { cache: "no-store" });
-      const j = await r.json();
-      if (!r.ok) { setErr(j.message ?? "Gagal memuat data Repliz."); setData(null); } else { setData(j); setErr(null); }
-    } catch { setErr("Tidak dapat menghubungi server."); }
-    setLoading(false);
-  }, []);
-  useEffect(() => { load(); const id = setInterval(() => load(), 60_000); return () => clearInterval(id); }, [load]);
-
-  if (err) return (
+  if (err && !data) return (
     <div className="p-4"><div className={`${card} max-w-xl space-y-2 p-5`}>
       <h2 className="text-sm font-semibold">Repliz belum terhubung</h2>
       <p className="text-sm text-slate-600 dark:text-slate-300">{err}</p>
@@ -54,6 +84,8 @@ export default function SocialView() {
         <p className="text-xs text-slate-500">Sumber: Repliz (baca-saja) · plan {data.plan?.name ?? "—"} · diperbarui {new Date(data.fetchedAt).toLocaleTimeString("id-ID")}</p>
         <button onClick={() => load(true)} disabled={loading} className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium disabled:opacity-50 dark:bg-slate-800">{loading ? "Memuat…" : "↻ Segarkan"}</button>
       </div>
+
+      <WorkflowStrip data={data} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Stat title="Akun terhubung" value={`${connected}/${data.accounts.length}`} sub={`${data.accountTotal} akun terdaftar`} />

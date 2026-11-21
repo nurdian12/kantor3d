@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useMissionStore, type Tab } from "@/store/useMissionStore";
 import { useWorkStore } from "@/store/useWorkStore";
 import { randomSysLine } from "@/lib/mockData";
+import { REPLIZ_AGENTS, deriveAgentStates } from "@/lib/replizAgents";
 import TasksView from "./views/TasksView";
 import CalendarView from "./views/CalendarView";
 import UsageView from "./views/UsageView";
@@ -25,6 +26,7 @@ const Scene3D = dynamic(() => import("./Scene3D"), { ssr: false, loading: () => 
 
 export default function Dashboard() {
   const { viewMode, setViewMode, theme, setTheme, simulate, connection, focus, setFocus, selectedId, follow, setFollow, agents, select, authenticated, tab, setTab } = useMissionStore();
+  const social = useWorkStore((s) => s.social);
   const selected = agents.find((a) => a.id === selectedId);
   useAgentSocket();
 
@@ -45,7 +47,11 @@ export default function Dashboard() {
   useEffect(() => {
     if (!simulate || connection !== "offline") return;
     const id = setInterval(() => {
-      const { agents, setStatus, addLog } = useMissionStore.getState();
+      const { agents: all, setStatus, addLog } = useMissionStore.getState();
+      // agen yang digerakkan data Repliz tidak disimulasikan acak
+      const driven = useWorkStore.getState().social ? (REPLIZ_AGENTS as readonly string[]) : [];
+      const agents = all.filter((x) => !driven.includes(x.id));
+      if (agents.length === 0) return;
       const a = agents[Math.floor(Math.random() * agents.length)];
       const r = Math.random();
       const next: AgentStatus = a.status === "error" ? "working" : r < 0.12 ? "error" : a.status === "working" ? "idle" : "working";
@@ -54,6 +60,28 @@ export default function Dashboard() {
     }, 6000);
     return () => clearInterval(id);
   }, [simulate, connection]);
+
+  // Alur kerja dari Repliz: polling ringkasan tiap 60 dtk; kondisi nyata dipetakan ke status agen Scheduler & Community.
+  useEffect(() => {
+    const { fetchSocial } = useWorkStore.getState();
+    fetchSocial();
+    const id = setInterval(() => fetchSocial(), 60_000);
+    const unsub = useWorkStore.subscribe((s, prev) => {
+      if (!s.social || s.social === prev.social) return;
+      const m = useMissionStore.getState();
+      useWorkStore.getState().pushSys("info", "repliz", `sinkron: ${s.social.schedule.pending} terjadwal · ${s.social.schedule.error} gagal · ${s.social.comments.total} komentar menunggu`);
+      if (m.connection === "live") return; // server WebSocket adalah sumber kebenaran status
+      const derived = deriveAgentStates(s.social);
+      for (const [agentId, d] of Object.entries(derived)) {
+        const cur = m.agents.find((a) => a.id === agentId);
+        if (!cur || (cur.status === d.status && cur.task === d.task)) continue;
+        const changed = cur.status !== d.status;
+        m.applyStatus(agentId, d.status, d.task);
+        if (changed) m.addLog(agentId, d.status === "error" ? "error" : d.status === "idle" ? "warn" : "info", d.task);
+      }
+    });
+    return () => { clearInterval(id); unsub(); };
+  }, []);
 
   // Umpan log sistem: (1) cerminkan log aktivitas agen (real-time dari WebSocket bila terhubung),
   // (2) tanpa WebSocket, hasilkan baris sistem simulasi agar terminal tetap hidup.
@@ -82,7 +110,7 @@ export default function Dashboard() {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white/80 px-5 py-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/80">
         <div>
           <h1 className="text-lg font-bold tracking-tight">🛰️ AI Agent Mission Control</h1>
-          <p className="text-xs text-slate-500">Kantor virtual 2 lantai · {connection === "live" ? "data real-time (WebSocket)" : connection === "connecting" ? "menghubungkan…" : "data mock"}</p>
+          <p className="text-xs text-slate-500">Kantor media sosial · {social ? "Repliz terhubung" : "Repliz belum terhubung"} · {connection === "live" ? "agen real-time (WebSocket)" : connection === "connecting" ? "menghubungkan…" : "agen simulasi"}</p>
         </div>
         <div className="flex items-center gap-3">
           {tab === "office" && <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="group" aria-label="Mode tampilan">

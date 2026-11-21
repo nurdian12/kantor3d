@@ -43,3 +43,11 @@ export const relTime = (t: number) => {
   const m = Math.round((Date.now() - t) / 60000);
   return m < 1 ? "baru saja" : m < 60 ? `${m} mnt lalu` : m < 1440 ? `${Math.round(m / 60)} jam lalu` : `${Math.round(m / 1440)} hari lalu`;
 };
+
+export const PLATFORM: Record<string, { icon: string; name: string }> = {
+  instagram: { icon: "📸", name: "Instagram" }, youtube: { icon: "▶️", name: "YouTube" }, facebook: { icon: "👍", name: "Facebook" },
+  tiktok: { icon: "🎵", name: "TikTok" }, threads: { icon: "🧵", name: "Threads" }, linkedin: { icon: "💼", name: "LinkedIn" },
+  twitter: { icon: "🐦", name: "X / Twitter" }, whatsapp: { icon: "💬", name: "WhatsApp" }, telegram: { icon: "✈️", name: "Telegram" },
+  pinterest: { icon: "📌", name: "Pinterest" }, shopee: { icon: "🛍️", name: "Shopee" },
+};
+export const plat = (t: string) => PLATFORM[t] ?? { icon: "🌐", name: t || "—" };

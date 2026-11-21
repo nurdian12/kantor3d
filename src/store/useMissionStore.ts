@@ -29,21 +29,27 @@ const toLog = (l: RemoteLog): LogEntry => ({ id: l.id ?? ++logSeq, agentId: l.ag
 const now = Date.now();
 
 const INITIAL_AGENTS: Agent[] = [
-  { id: "lead", name: "Lead Agent", role: "Orkestrator", color: "#6366f1", status: "working", task: "Mengoordinasi sprint & delegasi tugas", idleIndex: 0, deskIndex: 0 },
-  { id: "engineer", name: "Lead Engineer", role: "Engineering", color: "#10b981", status: "working", task: "Refactor modul autentikasi API", idleIndex: 1, deskIndex: 1 },
-  { id: "researcher", name: "Content Researcher", role: "Riset Konten", color: "#f59e0b", status: "idle", task: "Menunggu brief riset berikutnya", idleIndex: 2, deskIndex: 2 },
+  { id: "manager", name: "Social Manager", role: "Orkestrator", color: "#6366f1", status: "working", task: "Menyusun kalender konten minggu depan", idleIndex: 0, deskIndex: 0 },
+  { id: "scraper", name: "Social Scraper", role: "Riset & Scraping", color: "#10b981", status: "working", task: "Scraping tren TikTok & Threads", idleIndex: 1, deskIndex: 1 },
+  { id: "creator", name: "Content Creator", role: "Pembuatan Konten", color: "#f59e0b", status: "idle", task: "Menunggu brief konten berikutnya", idleIndex: 2, deskIndex: 2 },
+  { id: "scheduler", name: "Scheduler", role: "Penjadwalan (Repliz)", color: "#ec4899", status: "idle", task: "Antrean posting kosong", idleIndex: 3, deskIndex: 3 },
+  { id: "community", name: "Community Manager", role: "Komentar & Chat (Repliz)", color: "#06b6d4", status: "idle", task: "Tidak ada komentar menunggu", idleIndex: 4, deskIndex: 4 },
+  { id: "analyst", name: "Analyst", role: "Analitik Performa", color: "#8b5cf6", status: "idle", task: "Menunggu data performa baru", idleIndex: 5, deskIndex: 5 },
 ];
 
 const INITIAL_LOGS: LogEntry[] = [
-  { id: 3, agentId: "researcher", time: now - 60_000, level: "info", message: "Selesai merangkum 12 artikel tren AI" },
-  { id: 2, agentId: "engineer", time: now - 30_000, level: "info", message: "Memulai refactor modul autentikasi" },
-  { id: 1, agentId: "lead", time: now - 10_000, level: "info", message: "Sprint planning dimulai" },
+  { id: 3, agentId: "scraper", time: now - 60_000, level: "info", message: "Selesai scraping 40 video tren #psikologi" },
+  { id: 2, agentId: "creator", time: now - 30_000, level: "info", message: "Draf caption 'Love bombing' selesai" },
+  { id: 1, agentId: "manager", time: now - 10_000, level: "info", message: "Briefing konten harian dimulai" },
 ];
 
 const TASKS: Record<string, string[]> = {
-  lead: ["Mengoordinasi sprint & delegasi tugas", "Review laporan harian tim", "Menyusun roadmap kuartal"],
-  engineer: ["Refactor modul autentikasi API", "Menulis unit test untuk scheduler", "Optimasi query database"],
-  researcher: ["Riset kompetitor konten", "Merangkum paper terbaru", "Mengumpulkan referensi artikel"],
+  manager: ["Menyusun kalender konten minggu depan", "Briefing tim konten harian", "Meninjau performa kampanye"],
+  scraper: ["Scraping tren TikTok & Threads", "Memantau akun kompetitor", "Mengumpulkan hashtag naik daun"],
+  creator: ["Menulis caption Reels", "Menyusun naskah video 60 detik", "Membuat carousel edukasi"],
+  scheduler: ["Mengisi antrean posting Repliz", "Mencoba ulang posting gagal", "Mengatur jam tayang optimal"],
+  community: ["Membalas komentar pengikut", "Memoderasi komentar spam", "Menindaklanjuti kontak follow-up"],
+  analyst: ["Menyusun laporan performa harian", "Menganalisis engagement per platform", "Merekap pertumbuhan pengikut"],
 };
 
 const MAX_LOGS = 50;
