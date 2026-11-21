@@ -1,0 +1,6 @@
+# /etc/caddy/Caddyfile — ganti dengan domain Anda (A record harus mengarah ke IP VPS).
+# Caddy mengurus sertifikat HTTPS (Let's Encrypt) dan perpanjangannya secara otomatis.
+dashboard.contoh.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3000
+}

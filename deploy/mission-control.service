@@ -1,0 +1,21 @@
+# /etc/systemd/system/mission-control.service
+[Unit]
+Description=AI Agent Mission Control (Next.js)
+After=network.target
+
+[Service]
+Type=simple
+User=missioncontrol
+WorkingDirectory=/opt/kantor3d
+Environment=NODE_ENV=production
+# Dengarkan hanya di localhost; akses publik lewat Caddy (HTTPS).
+# Env aplikasi (REPLIZ_*, AUTH_*, DASHBOARD_PASSWORD) dibaca Next dari /opt/kantor3d/.env.local
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

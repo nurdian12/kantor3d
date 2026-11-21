@@ -42,7 +42,7 @@ Opsional; aktif bila `AUTH_SECRET` **dan** `DASHBOARD_PASSWORD` diisi (lihat `.e
 2. **Tiket WebSocket** — browser tidak bisa mengirim header pada WebSocket, dan `NEXT_PUBLIC_*` terlihat publik, jadi secret **tidak** ditaruh di klien. Klien meminta tiket ke `/api/ws-ticket` (butuh sesi), lalu konek dengan `?ticket=...`. Tiket berumur 30 detik dan sekali pakai.
 3. **Server WS** (`server/mock-server.mjs`) memverifikasi tiket, menolak tiket kedaluwarsa/dipakai ulang (401), memeriksa `Origin` terhadap `WS_ALLOWED_ORIGINS` (403), membatasi ukuran pesan 4 KB, memvalidasi `set_status`, dan memutus koneksi mati (heartbeat).
 
-Catatan produksi: gunakan HTTPS/`wss://` (tiket ada di query string), jalankan server WS dengan `AUTH_SECRET` yang sama, dan set env saat **build dan runtime**.
+Catatan produksi: gunakan HTTPS/`wss://` (tiket ada di query string), jalankan server WS dengan `AUTH_SECRET` yang sama, dan env aplikasi cukup tersedia saat **runtime** (`.env.local` di folder aplikasi; sudah diuji, termasuk middleware login), kecuali `NEXT_PUBLIC_*` yang ikut tertanam saat build.
 Batasan: pembatas login & daftar tiket terpakai berada di memori satu proses (gunakan Redis bila multi-instance); satu password untuk semua pengguna, belum ada peran viewer/operator.
 
 ## Kantor media sosial — semua data dari Repliz
@@ -73,3 +73,12 @@ Aplikasi **tidak memakai data contoh/mock**: setiap tampilan berasal dari Repliz
 
 ## Performa 3D
 Tombol **Kualitas** (Tinggi / Sedang / Ringan) di kanan atas tampilan 3D (`src/lib/quality.ts`): mengatur resolusi (DPR), bayangan, batas FPS (render hanya sesuai kebutuhan di mode Sedang/Ringan), dan lampu titik. Bila FPS terukur rendah, kualitas turun otomatis satu tingkat (pilihan manual mematikan ini dan disimpan). Di uji render software, Ringan ±2× lebih cepat. Server/VPS tidak mempercepat rendering 3D — itu dikerjakan GPU perangkat yang membuka halaman.
+
+## Deploy ke VPS tanpa Docker (Ubuntu/Debian)
+File contoh ada di `deploy/` (`mission-control.service`, `Caddyfile`, `deploy.sh`). Ringkasan langkah:
+1. Pasang Node.js 22 LTS, git, dan Caddy; buat user `missioncontrol`; `git clone -b <branch> ... /opt/kantor3d`; `npm ci && npm run build`.
+2. Buat `/opt/kantor3d/.env.local` (chmod 600): `REPLIZ_BASIC_USER/PASS`, **wajib** `AUTH_SECRET` + `DASHBOARD_PASSWORD` (tanpa ini siapa pun yang tahu alamatnya bisa melihat data Repliz Anda).
+3. Pasang `mission-control.service` ke systemd; pasang `Caddyfile` dengan domain Anda (HTTPS wajib: cookie login bertanda Secure).
+4. Firewall: buka hanya 22, 80, 443; aplikasi mendengarkan di `127.0.0.1:3000`.
+5. Update: `deploy/deploy.sh`.
+Server WebSocket (`server/mock-server.mjs`) hanya mock untuk pengembangan — jangan dideploy; tanpa runtime agen sungguhan, biarkan `NEXT_PUBLIC_WS_URL` kosong.
