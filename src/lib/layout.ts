@@ -12,10 +12,10 @@ export const floorOfY = (y: number) => Math.min(FLOORS, Math.max(1, Math.round(y
 
 /** Fungsi tiap lantai (dipakai label 3D dan denah 2D). Lantai 1-4 = area kerja, lantai 5 = istirahat. */
 export const FLOOR_INFO: Array<{ n: number; name: string; short: string; accent: string }> = [
-  { n: 1, name: "Lobi & Komunitas", short: "Lobi", accent: "#06b6d4" },
-  { n: 2, name: "Studio Konten", short: "Studio", accent: "#f59e0b" },
-  { n: 3, name: "Riset & Analitik", short: "Riset", accent: "#10b981" },
-  { n: 4, name: "Ruang Kontrol", short: "Kontrol", accent: "#6366f1" },
+  { n: 1, name: "Lobi & Hubungan Pelanggan", short: "Lobi", accent: "#06b6d4" },
+  { n: 2, name: "Studio Kreatif", short: "Studio", accent: "#f59e0b" },
+  { n: 3, name: "Riset, SEO & Analitik", short: "Riset", accent: "#10b981" },
+  { n: 4, name: "Kontrol & Iklan", short: "Kontrol", accent: "#6366f1" },
   { n: 5, name: "Santai & Rooftop", short: "Santai", accent: "#ec4899" },
 ];
 
@@ -28,26 +28,25 @@ export interface Spot {
 }
 
 /**
- * 12 workstation: 3 meja di tiap lantai kerja (1-4), menghadap -z (dinding belakang).
- * Urutan indeks: lantai 1 (0-2), lantai 2 (3-5), lantai 3 (6-8), lantai 4 (9-11).
+ * 16 workstation: 4 meja di tiap lantai kerja (1-4), menghadap -z (dinding belakang).
+ * Urutan indeks: lantai 1 (0-3), lantai 2 (4-7), lantai 3 (8-11), lantai 4 (12-15).
  */
-export const DESK_COLS = [-3.5, 0.5, 4.5];
+export const DESK_COLS = [-4.5, -1.5, 1.5, 4.5];
 export const DESKS: Spot[] = [1, 2, 3, 4].flatMap((n) =>
   DESK_COLS.map((x, c): Spot => ({ pos: [x, floorY(n), -1.3], rotY: Math.PI, pose: "sit", floor: n, label: `${FLOOR_INFO[n - 1].short} · meja ${c + 1}` })),
 );
 
 /**
- * 6 spot istirahat di lantai 5. Urutan diselang-seling (lounge, kamar, balkon, ...)
- * agar agen pertama tersebar di tiga area.
+ * 14 spot istirahat di lantai 5: 3 kursi sofa lounge, 2 kasur, 9 posisi di dek rooftop.
+ * Urutan diselang-seling (lounge, kamar, rooftop, ...) agar agen pertama tersebar.
  */
 const Y5 = floorY(5);
+const sit = (x: number): Spot => ({ pos: [x, Y5, -3.2], rotY: 0, pose: "sit", floor: 5, label: "Lounge" });
+const bed = (x: number): Spot => ({ pos: [x, Y5, -1.7], rotY: 0, pose: "lie", floor: 5, label: "Kamar Tidur" });
+const roof = (x: number, z: number): Spot => ({ pos: [x, Y5, z], rotY: 0, pose: "stand", floor: 5, label: "Rooftop" });
 export const IDLE_SPOTS: Spot[] = [
-  { pos: [-4.2, Y5, -3.2], rotY: 0, pose: "sit", floor: 5, label: "Lounge" },
-  { pos: [0.2, Y5, -1.7], rotY: 0, pose: "lie", floor: 5, label: "Kamar Tidur" },
-  { pos: [5.4, Y5, 5.2], rotY: 0, pose: "stand", floor: 5, label: "Balkon" },
-  { pos: [-2.6, Y5, -3.2], rotY: 0, pose: "sit", floor: 5, label: "Lounge" },
-  { pos: [2.6, Y5, -1.7], rotY: 0, pose: "lie", floor: 5, label: "Kamar Tidur" },
-  { pos: [6.8, Y5, 5.2], rotY: 0, pose: "stand", floor: 5, label: "Balkon" },
+  sit(-4.4), bed(0.2), roof(4.6, 5.3), sit(-3.4), bed(2.6), roof(5.4, 5.3), sit(-2.4),
+  roof(6.2, 5.3), roof(7.0, 5.3), roof(7.8, 5.3), roof(5.0, 4.4), roof(5.8, 4.4), roof(6.6, 4.4), roof(7.4, 4.4),
 ];
 
 /** Kapasitas spot istirahat; agen ke-N memakai spot (N mod kapasitas) */

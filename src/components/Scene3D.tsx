@@ -16,7 +16,10 @@ const MID = (FLOORS * FLOOR_H) / 2;
 const presetFor = (f: Focus): Cam =>
   f === "all"
     ? { pos: [13, MID + 4, 30], target: [0, MID - 0.5, 0] }
-    : { pos: [0, floorY(Number(f)) + 14.3, 12.5], target: [0, floorY(Number(f)) + 0.3, 0.4] };
+    : Number(f) === FLOORS
+      // lantai 5: sasaran digeser ke kanan-depan agar dek rooftop (tempat banyak agen) ikut terbingkai
+      ? { pos: [2.6, floorY(5) + 16.5, 15.5], target: [2.6, floorY(5) + 0.3, 1.8] }
+      : { pos: [0, floorY(Number(f)) + 14.3, 12.5], target: [0, floorY(Number(f)) + 0.3, 0.4] };
 
 /** Animasi halus kamera ke preset saat fokus berubah; setelah itu kontrol bebas kembali ke pengguna */
 function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl | null> }) {

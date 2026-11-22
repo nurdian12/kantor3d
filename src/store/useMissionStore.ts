@@ -3,7 +3,7 @@ import type { Agent, AgentStatus, LogEntry } from "@/lib/types";
 import { CAPACITY, DESKS } from "@/lib/layout";
 import type { Quality } from "@/lib/quality";
 import type { Focus } from "@/lib/layout";
-import { AGENT_META } from "@/lib/agentsMeta";
+import { AGENT_META, NOT_CONNECTED_IDS } from "@/lib/agentsMeta";
 import type { RemoteAgent, RemoteLog } from "@/lib/protocol";
 import type { UsageRecord } from "@/lib/workTypes";
 
@@ -31,15 +31,14 @@ function toAgent(r: RemoteAgent, i: number, prev?: Agent, freeDesk?: number): Ag
 }
 const toLog = (l: RemoteLog): LogEntry => ({ id: l.id ?? ++logSeq, agentId: l.agentId, time: l.time ?? Date.now(), level: l.level ?? "info", message: l.message });
 
-/** Agen yang belum punya sumber data nyata (Repliz: research/template membutuhkan upgrade plan) */
-export const NOT_CONNECTED = ["scraper", "creator"] as const;
+/** Agen yang belum punya sumber data nyata (lihat AGENT_META.source) */
+export const NOT_CONNECTED = NOT_CONNECTED_IDS;
 const WAITING = "Menunggu data Repliz…";
-const NO_SOURCE = "Belum terhubung — butuh sumber data (Repliz research/template perlu upgrade plan)";
 
 // Nama/peran/warna berasal dari satu sumber: lib/agentsMeta.ts
 const INITIAL_AGENTS: Agent[] = AGENT_META.map((m, i) => ({
   id: m.id, name: m.name, role: m.role, color: m.color, status: "idle" as const,
-  task: (NOT_CONNECTED as readonly string[]).includes(m.id) ? NO_SOURCE : WAITING,
+  task: m.source === "none" ? `Belum terhubung — ${m.why}` : WAITING,
   idleIndex: m.idleIndex, deskIndex: m.deskIndex,
 }));
 

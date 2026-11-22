@@ -4,7 +4,7 @@ import { spotFor } from "./Character";
 import type { AgentStatus } from "@/lib/types";
 import { sendCommand } from "@/lib/useAgentSocket";
 import { useWorkStore } from "@/store/useWorkStore";
-import { NOT_CONNECTED } from "@/store/useMissionStore";
+import { AGENT_META } from "@/lib/agentsMeta";
 
 const badge: Record<AgentStatus, string> = {
   working: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300",
@@ -50,7 +50,7 @@ export default function QuickPanel() {
                   <span className={`h-1.5 w-1.5 rounded-full ${dot[a.status]}`} />{statusLabel(a.status)}
                 </span>
               </div>
-              <p className="mt-2 truncate text-xs text-slate-600 dark:text-slate-400" title={a.task}>{(NOT_CONNECTED as readonly string[]).includes(a.id) && connection !== "live" ? "⚠ Belum terhubung ke sumber data" : a.task}</p>
+              <p className="mt-2 truncate text-xs text-slate-600 dark:text-slate-400" title={a.task}>{AGENT_META.find((m) => m.id === a.id)?.source === "none" && connection !== "live" ? "⚠ Belum terhubung ke sumber data" : a.task}</p>
               <div className="mt-2 flex gap-1" onClick={(e) => e.stopPropagation()}>
                 {(["working", "idle", "error"] as AgentStatus[]).map((s) => (
                   <button key={s} onClick={() => setStatus(a.id, s)}

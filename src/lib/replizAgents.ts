@@ -2,7 +2,7 @@ import type { AgentStatus } from "./types";
 import type { SocialSummary, StatsSummary } from "./repliz";
 
 /** Agen yang statusnya diturunkan dari kondisi nyata Repliz */
-export const REPLIZ_AGENTS = ["manager", "scheduler", "community", "analyst"] as const;
+export const REPLIZ_AGENTS = ["manager", "scheduler", "community", "analyst", "crm", "designer", "market", "email"] as const;
 /** Posting gagal dalam rentang ini dianggap "belum ditangani" -> Scheduler berstatus Error */
 export const ERROR_WINDOW_MS = 72 * 3600_000;
 /** Posting yang tayang dalam rentang ini dianggap sedang disiapkan -> Scheduler berstatus Working */
@@ -19,6 +19,9 @@ type State = { status: AgentStatus; task: string };
  *  - Community Manager: Working selama ada komentar menunggu balasan.
  *  - Analyst: ringkasan statistik akun (Idle); Error bila statistik gagal dimuat.
  *  - Social Manager: memantau seluruh alur; Working bila ada antrean/komentar; Error bila sinkron Repliz gagal.
+ *  - CRM & Leads (Vega): Working bila ada kontak jatuh tempo tindak lanjut; selain itu ringkasan funnel kontak.
+ *  - Desain & Video (Lumi): Working bila ada aset baru <30 menit di storage; selain itu ringkasan aset.
+ *  - Marketplace (Bintang) & Email/WhatsApp (Komet): hanya melaporkan kenyataan jumlah akun terhubung; belum ada data kerja.
  * Scraper & Creator belum punya sumber data nyata -> tidak diturunkan di sini.
  */
 export function deriveAgentStates(s: SocialSummary, stats: StatsSummary | null, statsError: string | null, now = Date.now()): Record<string, State> {
@@ -52,5 +55,26 @@ export function deriveAgentStates(s: SocialSummary, stats: StatsSummary | null, 
     task: `Memantau alur: ${s.schedule.pending} terjadwal · ${s.schedule.error} gagal · ${s.comments.total} komentar menunggu`,
   };
 
-  return { manager, scheduler, community, analyst };
+  const c = s.crm;
+  const crm: State = !c
+    ? { status: "idle", task: "Data kontak belum tersedia" }
+    : c.due > 0
+      ? { status: "working", task: `Menindaklanjuti ${c.due} kontak jatuh tempo` }
+      : { status: "idle", task: `${c.all} kontak · ${c.new} baru · ${c.won} berhasil` };
+
+  const a = s.assets;
+  const fresh = a?.latestAt && now - +new Date(a.latestAt) < 30 * 60_000;
+  const mb = (n: number) => (n >= 1e9 ? (n / 1e9).toFixed(1) + " GB" : Math.round(n / 1e6) + " MB");
+  const designer: State = !a
+    ? { status: "idle", task: "Data aset belum tersedia" }
+    : fresh
+      ? { status: "working", task: `Aset baru: ${a.latestName ?? "file"}` }
+      : { status: "idle", task: `${a.total.toLocaleString("id-ID")} aset · ${mb(a.usedBytes)} terpakai` };
+
+  const shopee = s.channels?.shopee ?? 0;
+  const market: State = { status: "idle", task: shopee > 0 ? `${shopee} akun Shopee ada di Repliz, data penjualan belum diintegrasikan` : "Belum ada akun Shopee terhubung di Repliz" };
+  const chat = (s.channels?.whatsapp ?? 0) + (s.channels?.telegram ?? 0);
+  const email: State = { status: "idle", task: chat > 0 ? `${chat} akun WhatsApp/Telegram ada di Repliz, data kampanye belum diintegrasikan` : "Belum ada akun WhatsApp/Telegram terhubung di Repliz" };
+
+  return { manager, scheduler, community, analyst, crm, designer, market, email };
 }

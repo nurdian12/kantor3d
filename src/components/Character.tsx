@@ -118,7 +118,9 @@ export function Character({ agent }: { agent: Agent }) {
     const focus = useMissionStore.getState().focus;
     const show = agentVisible(focus, g.position.y);
     g.visible = show;
-    if (show !== tagShown) setTagShown(show); // Html drei tidak mengikuti visible induk
+    // label nama (HTML) hanya saat berguna: di tampilan "Semua" cukup untuk agen yang bekerja/error/terpilih, agar tidak ramai & ringan
+    const wantTag = show && (focus !== "all" || agent.status !== "idle" || useMissionStore.getState().selectedId === agent.id);
+    if (wantTag !== tagShown) setTagShown(wantTag); // Html drei tidak mengikuti visible induk
 
     // animasi pose
     const b = body.current!;
@@ -177,7 +179,7 @@ export function Character({ agent }: { agent: Agent }) {
         <Limb refObj={armL} len={0.62} w={0.12} color={agent.color} pos={[-0.3, 1.27, 0]} />
         <Limb refObj={armR} len={0.62} w={0.12} color={agent.color} pos={[0.3, 1.27, 0]} />
       </group>
-      {tagShown && <Html position={[0, 2.25, 0]} center distanceFactor={11} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
+      {tagShown && <Html position={[0, 2.25 + (agent.status === "idle" ? (agent.idleIndex % 3) * 0.5 : 0), 0]} center distanceFactor={14} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
         <div className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/20 bg-slate-900/85 px-2.5 py-1 text-[11px] font-medium text-white shadow-lg backdrop-blur">
           <span className="inline-block h-2 w-2 rounded-full" style={{ background: sc, boxShadow: `0 0 8px ${sc}` }} />
           {agent.name}

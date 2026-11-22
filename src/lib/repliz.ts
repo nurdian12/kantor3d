@@ -15,6 +15,12 @@ export interface SocialSummary {
   recentDone: Array<{ id: string; title: string; scheduleAt: string; platform: string; account: string }>;
   failed: Array<{ id: string; title: string; scheduleAt: string; platform: string; account: string; errorMessage: string }>;
   comments: { total: number; items: Array<{ id: string; text: string; platform: string; account: string; contentTitle: string; createdAt: string }> };
+  /** jumlah akun terdaftar per platform (shopee, whatsapp, ... = 0 bila belum ada) */
+  channels: Record<string, number>;
+  /** funnel kontak (CRM) */
+  crm: { all: number; new: number; contacted: number; interested: number; won: number; lost: number; due: number } | null;
+  /** aset kreatif di storage */
+  assets: { total: number; usedBytes: number; capacityBytes: number; latestAt: string | null; latestName: string | null } | null;
 }
 
 export class ReplizError extends Error {
@@ -49,7 +55,7 @@ export async function getSocialSummary(force = false): Promise<SocialSummary> {
   if (!force && cache && Date.now() - cache.at < TTL) return cache.data;
   const nowIso = new Date().toISOString();
   const dayAgo = new Date(Date.now() - 24 * 3600_000).toISOString();
-  const [me, accounts, count, pending, process, error, success, upcoming, failed, comments, done] = await Promise.all([
+  const [me, accounts, count, pending, process, error, success, upcoming, failed, comments, done, crm, latestFile, storageStat] = await Promise.all([
     get("/public/me"),
     get("/public/account", { page: 1, limit: 100 }),
     get("/public/account/count").catch(() => null),
@@ -61,9 +67,17 @@ export async function getSocialSummary(force = false): Promise<SocialSummary> {
     get("/public/schedule", { page: 1, limit: 8, status: "error" }),
     get("/public/comment", { page: 1, limit: 10, status: "pending" }),
     get("/public/schedule", { page: 1, limit: 100, status: "success", fromDate: dayAgo }),
+    get("/public/contact/count").catch(() => null),
+    get("/public/storage/file", { page: 1, limit: 1 }).catch(() => null),
+    get("/public/storage/statistic").catch(() => null),
   ]);
 
+  const num = (v: unknown) => (typeof v === "number" && isFinite(v) ? v : 0);
+  const { total: _t, limit: _l, operator: _o, ...perType } = (count ?? {}) as Record<string, unknown>; // eslint-disable-line @typescript-eslint/no-unused-vars
   const data: SocialSummary = {
+    channels: Object.fromEntries(Object.entries(perType).map(([k, v]) => [k, num(v)])),
+    crm: crm ? { all: num(crm.all), new: num(crm.new), contacted: num(crm.contacted), interested: num(crm.interested), won: num(crm.won), lost: num(crm.lost), due: num(crm.due) } : null,
+    assets: latestFile && storageStat ? { total: num(latestFile.totalDocs), usedBytes: num(storageStat.usage?.used), capacityBytes: num(storageStat.usage?.total), latestAt: latestFile.docs?.[0]?.createdAt ?? null, latestName: clip(latestFile.docs?.[0]?.filename, 60) || null } : null,
     fetchedAt: Date.now(),
     plan: me ? { name: me.plan, expiredAt: me.expiredAt } : null, // sengaja tidak menyertakan email/nama pemilik
     accounts: (accounts.docs ?? []).map((a: any) => ({ id: a.id, type: a.type, name: clip(a.name, 60), username: a.username, isConnected: !!a.isConnected })), // eslint-disable-line @typescript-eslint/no-explicit-any

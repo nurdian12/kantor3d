@@ -28,13 +28,21 @@ function verifyTicket(token) {
 }
 
 const agents = [
-  { id: "manager", name: "Nova", role: "Orkestrator", status: "working", task: "Menyusun kalender konten" },
-  { id: "scraper", name: "Radar", role: "Riset & Scraping", status: "working", task: "Scraping tren TikTok & Threads" },
-  { id: "creator", name: "Pixel", role: "Pembuatan Konten", status: "idle", task: "Menunggu brief" },
-  { id: "scheduler", name: "Orbit", role: "Penjadwalan (Repliz)", status: "working", task: "Mengisi antrean posting" },
-  { id: "community", name: "Sapa", role: "Komentar & Chat (Repliz)", status: "idle", task: "Tidak ada komentar menunggu" },
-  { id: "analyst", name: "Kompas", role: "Analitik Performa", status: "idle", task: "Menunggu data baru" },
-];
+  ["manager", "Nova", "Strategi & Manajemen", "working", "Menyusun kalender konten"],
+  ["scraper", "Radar", "Riset & Social Listening", "working", "Memindai tren TikTok & Threads"],
+  ["creator", "Pixel", "Konten & Copywriting", "idle", "Menunggu brief"],
+  ["scheduler", "Orbit", "Media Sosial & Penjadwalan", "working", "Mengisi antrean posting"],
+  ["community", "Sapa", "Komunitas & Engagement", "idle", "Tidak ada komentar menunggu"],
+  ["analyst", "Kompas", "Analitik & Pelaporan", "idle", "Menunggu data baru"],
+  ["designer", "Lumi", "Desain & Video", "working", "Menyiapkan thumbnail"],
+  ["crm", "Vega", "CRM & Leads", "idle", "Tidak ada tindak lanjut"],
+  ["seo", "Atlas", "SEO & Konten Organik", "working", "Audit kata kunci"],
+  ["ads", "Roket", "Iklan Berbayar (Ads)", "working", "Optimasi anggaran iklan"],
+  ["email", "Komet", "Email & WhatsApp Marketing", "idle", "Menunggu kampanye"],
+  ["influencer", "Satelit", "Influencer & Afiliasi", "idle", "Menunggu brief kreator"],
+  ["pr", "Aurora", "PR & Brand", "idle", "Memantau sebutan merek"],
+  ["market", "Bintang", "Marketplace & E-commerce", "working", "Sinkron stok toko"],
+].map(([id, name, role, status, task]) => ({ id, name, role, status, task }));
 const logs = [];
 let seq = 0;
 

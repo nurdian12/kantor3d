@@ -82,17 +82,18 @@ File contoh ada di `deploy/` (`mission-control.service`, `Caddyfile`, `deploy.sh
 5. Update: `deploy/deploy.sh`.
 Server WebSocket (`server/mock-server.mjs`) hanya mock untuk pengembangan — jangan dideploy; tanpa runtime agen sungguhan, biarkan `NEXT_PUBLIC_WS_URL` kosong.
 
-## Gedung 5 lantai
-Tiap lantai punya fungsi sesuai alur kerja (`FLOOR_INFO` di `src/lib/layout.ts`):
+## Gedung 5 lantai & 14 divisi digital marketing
+Satu agen per divisi (`src/lib/agentsMeta.ts` = satu-satunya sumber nama, peran, warna, meja, dan status data). Lantai 1–4 berisi meja kerja (4 per lantai), lantai 5 untuk istirahat (lounge, 2 kamar, rooftop; 14 spot).
 
-| Lantai | Fungsi | Penghuni |
+| Lantai | Divisi (agen) | Data |
 |---|---|---|
-| 5 | Santai & Rooftop: lounge, 2 kamar tidur, dek rooftop | agen berstatus Idle |
-| 4 | Ruang Kontrol: layar kalender besar, meja rapat | Nova, Orbit |
-| 3 | Riset & Analitik: dinding data, rak server | Radar, Kompas |
-| 2 | Studio Konten: ring light, kamera, backdrop | Pixel |
-| 1 | Lobi & Komunitas: resepsionis, sofa tunggu | Sapa |
+| 4 Kontrol & Iklan | Strategi & Manajemen (Nova), Media Sosial & Penjadwalan (Orbit), Iklan Berbayar (Roket), Email & WhatsApp (Komet) | Nova, Orbit: Repliz · Roket, Komet: belum |
+| 3 Riset, SEO & Analitik | Riset & Social Listening (Radar), SEO (Atlas), Analitik (Kompas) | Kompas: Repliz · Radar, Atlas: belum |
+| 2 Studio Kreatif | Konten & Copywriting (Pixel), Desain & Video (Lumi), Influencer & Afiliasi (Satelit) | Lumi: Repliz (aset) · Pixel, Satelit: belum |
+| 1 Lobi & Hubungan | Komunitas (Sapa), CRM & Leads (Vega), PR & Brand (Aurora), Marketplace (Bintang) | Sapa, Vega: Repliz · Aurora, Bintang: belum |
 
-- Lantai 1–4 masing-masing punya 3 meja (12 total); penempatan agen ada di `deskIndex` pada `src/lib/agentsMeta.ts`. Agen dari server yang tidak dikenal otomatis mendapat meja kosong.
-- Tangga berkelok (switchback) menghubungkan semua lantai; karakter berjalan lewat setiap tangga di antara lantai asal dan tujuan (`stairPath`).
-- Gedung lebih berat dirender daripada versi 2 lantai: **Ringan** menghapus bayangan, lampu titik, dan dekorasi lantai 1–4; **Sedang** menghapus lampu titik.
+- **Data nyata (6 divisi):** jadwal & posting gagal (Orbit), komentar (Sapa), statistik akun (Kompas), funnel kontak/CRM dan tindak lanjut jatuh tempo (Vega, `/public/contact/count`), aset di storage (Lumi), ringkasan alur (Nova).
+- **Belum terhubung (8 divisi):** tampil jujur dengan alasannya (di panel kru dan di tab Sosial → "Divisi digital marketing"): tidak ada data palsu. Menyambungkannya butuh sumber data baru (mis. Ads Manager, Search Console, akun Shopee/WhatsApp di Repliz) atau upgrade plan Repliz.
+- Agen yang belum terhubung berstatus Idle dan berkumpul di rooftop; di tampilan "Semua", label nama hanya untuk agen yang bekerja/error/terpilih agar tidak ramai.
+- Tangga berkelok menghubungkan semua lantai; `stairPath` menghitung jalur lewat tangga-tangga di antara lantai asal dan tujuan.
+- Ringan = tanpa bayangan, lampu titik, dan dekorasi lantai 1–4; Sedang = tanpa lampu titik.
