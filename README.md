@@ -91,3 +91,6 @@ Gaya visual mengikuti referensi kantor isometrik modern: dinding putih dengan je
 - **Data nyata (6 divisi):** Orbit (jadwal & posting gagal), Sapa (komentar), Kompas (statistik akun), Vega (funnel kontak/CRM), Lumi (aset di storage), Nova (ringkasan alur).
 - **Belum terhubung (8 divisi):** alasannya tertulis di panel kru dan tab Sosial → "Divisi digital marketing"; tidak ada data palsu.
 - Kualitas: **Ringan** menghapus bayangan, lampu titik, halo LED, dan dekorasi; **Sedang** menghapus lampu titik dan halo.
+
+## Deploy otomatis dari GitHub (opsional)
+`.github/workflows/deploy.yml` menjalankan `deploy/deploy.sh` di VPS lewat SSH setiap ada push ke cabang `claude/nice-babbage-mkytfe` (atau manual dari tab Actions). Butuh 4 *secret* di GitHub (Settings → Secrets and variables → Actions): `VPS_HOST` (IP publik), `VPS_USER` (`missioncontrol`), `VPS_SSH_KEY` (kunci privat khusus deploy), `VPS_KNOWN_HOSTS` (hasil `ssh-keyscan IP`). Di VPS, user itu hanya perlu izin `sudo systemctl restart/status mission-control` (lihat langkah di percakapan/README deploy).
