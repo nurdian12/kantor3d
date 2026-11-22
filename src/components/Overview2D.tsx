@@ -1,9 +1,9 @@
 "use client";
-import { BALCONY, BUILDING, DESKS, FLOORS, FLOOR_INFO } from "@/lib/layout";
+import { BALCONY, BILLIARD, BUILDING, DESKS, FLOORS, FLOOR_INFO } from "@/lib/layout";
 import { useMissionStore, statusLabel } from "@/store/useMissionStore";
 import { spotFor } from "./Character";
 
-const W = BUILDING.maxX - BUILDING.minX; // 16
+const W = BUILDING.maxX - BUILDING.minX; // 22
 const D = BUILDING.maxZ - BUILDING.minZ; // 8
 const pct = (v: number, min: number, total: number) => `${((v - min) / total) * 100}%`;
 const statusBg = { working: "bg-emerald-500", idle: "bg-sky-500", error: "bg-red-500" } as const;
@@ -40,13 +40,15 @@ function Plan({ floor }: { floor: number }) {
             <>
               <Zone x={-6} z={-4} w={4.8} d={8} label="Lounge" tint="bg-violet-200/50 dark:bg-violet-400/10" />
               <Zone x={-1.2} z={-4} w={5.1} d={8} label="Kamar Tidur" tint="bg-rose-200/50 dark:bg-rose-400/10" />
+              <Zone x={BILLIARD.minX} z={-4} w={BILLIARD.maxX - BILLIARD.minX} d={8} label="Billiard" tint="bg-emerald-200/50 dark:bg-emerald-400/10" />
             </>
           ) : (
             <>
-              <Zone x={-6} z={-4} w={14} d={8} label="Area kerja semua divisi" tint="bg-sky-100/50 dark:bg-sky-400/10" />
+              <Zone x={-6} z={-4} w={14.2} d={8} label="Area kerja semua divisi" tint="bg-sky-100/50 dark:bg-sky-400/10" />
+              <Zone x={8.4} z={-4} w={5.6} d={8} label="Pantry & Lounge Tamu" tint="bg-emerald-100/50 dark:bg-emerald-400/10" />
               {DESKS.map((d, i) => d.floor !== floor ? null : (
                 <div key={i} className="absolute -translate-x-1/2 rounded-md border border-slate-400/60 bg-white/70 text-center text-[9px] leading-[22px] text-slate-500 dark:bg-slate-700/60 dark:text-slate-300"
-                  style={{ left: pct(d.pos[0], BUILDING.minX, W), top: pct(d.pos[2] - 1.7, BUILDING.minZ, D), width: "9%", height: "10%" }}>
+                  style={{ left: pct(d.pos[0], BUILDING.minX, W), top: pct(d.pos[2] - 1.7, BUILDING.minZ, D), width: "6.5%", height: "10%" }}>
                   {i + 1}
                 </div>
               ))}

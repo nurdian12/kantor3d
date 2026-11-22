@@ -1,6 +1,6 @@
 "use client";
 import { Html } from "@react-three/drei";
-import { BALCONY, DESKS, FLOORS, FLOOR_H, FLOOR_INFO, STAIR_X, floorVisible, flightEndZ, flightStartZ, floorY, landingZ } from "@/lib/layout";
+import { B_CX, B_W, BALCONY, BILLIARD, DESKS, FLOORS, FLOOR_H, FLOOR_INFO, STAIR_X, floorVisible, flightEndZ, flightStartZ, floorY, landingZ } from "@/lib/layout";
 import type { Theme } from "@/store/useMissionStore";
 import { useMissionStore } from "@/store/useMissionStore";
 import { QUALITY } from "@/lib/quality";
@@ -53,6 +53,32 @@ function Desk({ x, z, pal, agentColor, active, glow, seed, last }: { x: number; 
   );
 }
 
+/** Ruang billiard (sayap kanan lantai 2): meja biliar, rak tongkat, papan dart, bar mini, lampu gantung neon */
+function BilliardRoom({ pal, glow }: { pal: Pal; glow: boolean }) {
+  const [tx, tz] = BILLIARD.table, wood = pal.dark ? "#5a4636" : "#8a5a2b";
+  const balls = ["#facc15", "#3b82f6", "#ef4444", "#7c3aed", "#f97316", "#16a34a", "#92400e", "#111827", "#f8fafc"];
+  return (
+    <group>
+      <Box p={[(BILLIARD.minX + BILLIARD.maxX) / 2, 0.012, 0]} s={[BILLIARD.maxX - BILLIARD.minX, 0.02, 8]} c={pal.dark ? "#1a2a2a" : "#6b7280"} />
+      <Box p={[BILLIARD.minX - 0.2, 1.1, -2.4]} s={[0.1, 2.2, 3.2]} c={pal.glass} o={0.4} />
+      <Box p={[tx, 0.82, tz]} s={[3.2, 0.16, 1.8]} c={wood} cast />
+      <Box p={[tx, 0.91, tz]} s={[2.8, 0.03, 1.4]} c={pal.dark ? "#0f5a3a" : "#16a34a"} />
+      {[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => <Box key={a + "" + b} p={[tx + a * 1.4, 0.4, tz + b * 0.75]} s={[0.22, 0.8, 0.22]} c={wood} />)}
+      {[[-1.4, -0.7], [0, -0.7], [1.4, -0.7], [-1.4, 0.7], [0, 0.7], [1.4, 0.7]].map(([a, b], i) => <Box key={i} p={[tx + a, 0.94, tz + b]} s={[0.17, 0.02, 0.17]} c="#0b0b0b" />)}
+      {balls.map((c, i) => <mesh key={i} position={[tx + 0.5 + (i % 3) * 0.13, 0.97, tz - 0.13 + Math.floor(i / 3) * 0.13]}><sphereGeometry args={[0.055, 10, 8]} /><meshStandardMaterial color={c} roughness={0.35} /></mesh>)}
+      <mesh position={[tx - 0.7, 0.97, tz]}><sphereGeometry args={[0.055, 10, 8]} /><meshStandardMaterial color="#ffffff" roughness={0.35} /></mesh>
+      <Box p={[tx, 2.55, tz]} s={[2.6, 0.08, 0.5]} c="#111827" /><Led p={[tx, 2.5, tz]} s={[2.5, 0.03, 0.4]} c="#fde68a" glow={glow} />
+      <Box p={[tx - 1.2, 2.0, tz]} s={[0.02, 1.1, 0.02]} c="#64748b" /><Box p={[tx + 1.2, 2.0, tz]} s={[0.02, 1.1, 0.02]} c="#64748b" />
+      <Box p={[13.8, 1.1, -2.6]} s={[0.12, 1.5, 0.5]} c={wood} />{[0, 1, 2].map((i) => <Box key={i} p={[13.7, 1.1, -2.8 + i * 0.2]} s={[0.04, 1.4, 0.04]} c="#d6c7a8" />)}
+      <mesh position={[12.4, 2.1, -3.93]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.32, 0.32, 0.05, 20]} /><meshStandardMaterial color="#111827" emissive="#ef4444" emissiveIntensity={0.45} /></mesh>
+      <Box p={[10.4, 1.5, -3.92]} s={[1.8, 0.5, 0.05]} c="#ec4899" e="#ec4899" ei={0.9} />
+      <Box p={[13.4, 0.55, 2.8]} s={[1.0, 1.1, 0.7]} c={wood} cast /><BarStool p={[12.4, 0, 3.2]} /><BarStool p={[13.4, 0, 3.4]} />
+      <Plant p={[8.8, 0, -3.4]} big /><Plant p={[13.5, 0, -3.4]} />
+      <Label p={[11.2, 2.9, 0.4]}>Billiard</Label>
+    </group>
+  );
+}
+
 /** Perabot khas tiap lantai (koordinat lokal; y=0 adalah lantai) */
 function FloorProps({ n, pal, glow }: { n: number; pal: Pal; glow: boolean }) {
   const { dark } = pal;
@@ -63,6 +89,18 @@ function FloorProps({ n, pal, glow }: { n: number; pal: Pal; glow: boolean }) {
         <>
           <WallScreen p={[-3.4, 3.0, -3.9]} w={3.2} h={1.25} kind="code" seed={2} /><WallScreen p={[0.3, 3.0, -3.9]} w={3.2} h={1.25} kind="chart" seed={3} /><WallScreen p={[4.0, 3.0, -3.9]} w={3.2} h={1.25} kind="dash" seed={5} />
           <Plant p={[-6.4, 0, -3.4]} big /><Plant p={[7.5, 0, -3.4]} big /><Plant p={[7.5, 0, 3.5]} /><HangingPlant p={[7.0, 2.7, -3.7]} />
+          {/* sayap kanan: pantry kopi + lounge tamu + rak pajangan */}
+          <Box p={[11.2, 0.55, -3.3]} s={[4.6, 1.1, 0.8]} c={white} cast /><Box p={[11.2, 1.14, -3.3]} s={[4.7, 0.06, 0.9]} c={pal.wood} />
+          <Led p={[11.2, 0.45, -2.88]} s={[4.4, 0.05, 0.03]} c={pal.neonB} glow={glow} />
+          <Box p={[9.6, 1.45, -3.4]} s={[0.5, 0.6, 0.4]} c="#111827" /><Led p={[9.6, 1.5, -3.18]} s={[0.3, 0.06, 0.02]} c="#f59e0b" glow={glow} />
+          <Box p={[13.3, 1.0, -3.55]} s={[0.9, 2.0, 0.7]} c="#cbd5e1" cast /><Box p={[13.3, 1.5, -3.19]} s={[0.04, 0.5, 0.02]} c="#64748b" />
+          <BarStool p={[10.2, 0, -2.5]} /><BarStool p={[11.2, 0, -2.5]} /><BarStool p={[12.2, 0, -2.5]} />
+          <WallScreen p={[11.2, 3.3, -3.9]} w={3.6} h={1.1} kind="dash" seed={9} />
+          <Box p={[11.2, 0.01, 1.8]} s={[5, 0.02, 3.2]} c={pal.rug} /><Sofa p={[11.2, 0, 3.0]} n={3} color={pal.sofa} rotY={Math.PI} />
+          <Sofa p={[9.2, 0, 1.4]} n={1} color={pal.sofa} rotY={Math.PI / 2} /><Sofa p={[13.2, 0, 1.4]} n={1} color={pal.sofa} rotY={-Math.PI / 2} />
+          <Box p={[11.2, 0.24, 1.5]} s={[1.5, 0.08, 0.8]} c={pal.wood} /><Box p={[11.2, 0.12, 1.5]} s={[1.3, 0.24, 0.6]} c="#9ca3af" />
+          <Plant p={[13.5, 0, 3.4]} big /><Plant p={[8.6, 0, 3.5]} /><HangingPlant p={[9.2, 2.7, -3.7]} />
+          <Label p={[11.2, 2.0, 0.2]}>Pantry & Lounge Tamu</Label>
         </>
       );
     default: // Lantai istirahat: lounge, kamar tidur, rooftop
@@ -88,6 +126,7 @@ function FloorProps({ n, pal, glow }: { n: number; pal: Pal; glow: boolean }) {
           <Box p={[6.1, 0.98, 6]} s={[3.8, 0.04, 0.05]} c="#cbd5e1" /><Box p={[8, 0.98, 1]} s={[0.05, 0.04, 10]} c="#cbd5e1" />
           <Plant p={[7.5, 0, 3.4]} big /><Plant p={[4.3, 0, 3.4]} />
           <Label p={[6.1, 2.0, 4.6]}>Rooftop</Label>
+          <BilliardRoom pal={pal} glow={glow} />
         </>
       );
   }
@@ -106,7 +145,7 @@ export function Office({ theme }: { theme: Theme }) {
   return (
     <group>
       {/* dinding belakang & kiri opak (seperti ruang referensi); kanan terbuka agar bagian dalam terlihat */}
-      <Box p={[0, (top * H) / 2, -4.1]} s={[16.4, top * H + 0.2, 0.2]} c={pal.wall} />
+      <Box p={[B_CX, (top * H) / 2, -4.1]} s={[B_W + 0.4, top * H + 0.2, 0.2]} c={pal.wall} />
       <Box p={[-8.1, (top * H) / 2, 0]} s={[0.2, top * H + 0.2, 8.4]} c={pal.wallSide} />
       {/* plinth gelap di dasar gedung */}
       <Box p={[0, -0.5, 0]} s={[16.8, 0.3, 8.8]} c={pal.dark ? "#10162a" : "#59606d"} />
@@ -116,20 +155,21 @@ export function Office({ theme }: { theme: Theme }) {
         return (
           <group key={n} position={[0, floorY(n), 0]}>
             {/* lantai: slab tebal + tepi depan lebih gelap; bordes tangga di sisi tiba */}
-            {n === 1 ? <Box p={[0, -0.17, 0]} s={[16.4, 0.34, 8.4]} c={pal.floor} cast /> : (
+            {n === 1 ? <Box p={[B_CX, -0.17, 0]} s={[B_W + 0.4, 0.34, 8.4]} c={pal.floor} cast /> : (
               <>
-                <Box p={[1, -0.17, 0]} s={[14, 0.34, 8]} c={pal.floor} cast />
+                <Box p={[4, -0.17, 0]} s={[20, 0.34, 8]} c={pal.floor} cast />
                 <Box p={[-7, -0.17, landingZ(n)]} s={[2, 0.34, 2]} c={pal.floor} cast />
               </>
             )}
-            <Box p={[n === 1 ? 0 : 1, -0.17, n === 1 ? 4.22 : 4.02]} s={[n === 1 ? 16.4 : 14, 0.34, 0.04]} c={pal.edge} />
+            <Box p={[n === 1 ? B_CX : 4, -0.17, n === 1 ? 4.22 : 4.02]} s={[n === 1 ? B_W + 0.4 : 20, 0.34, 0.04]} c={pal.edge} />
             {/* LED neon: dasar dinding belakang & kiri + cove atas dinding belakang */}
-            <Led p={[0, 0.1, -3.95]} s={[15.9, 0.06, 0.05]} c={info.accent} glow={glow} />
+            <Led p={[B_CX, 0.1, -3.95]} s={[B_W - 0.1, 0.06, 0.05]} c={info.accent} glow={glow} />
             <Led p={[-7.95, 0.1, 0]} s={[0.05, 0.06, 7.9]} c={info.accent} glow={glow} />
-            {n < FLOORS && <Led p={[0, 3.78, -3.94]} s={[15.9, 0.05, 0.05]} c={pal.neonA} glow={glow} />}
+            {n < FLOORS && <Led p={[B_CX, FLOOR_H - 0.22, -3.94]} s={[B_W - 0.1, 0.05, 0.05]} c={pal.neonA} glow={glow} />}
             {/* jendela besar di dinding kiri + sekat */}
             {[-2.6, 0, 2.6].map((z) => <Box key={z} p={[-7.97, 2.0, z]} s={[0.05, 2.4, 2.3]} c={pal.glass} e={pal.glassE} ei={pal.dark ? 0.9 : 0.55} />)}
             {[-1.3, 1.3].map((z) => <Box key={z} p={[-7.95, 1.9, z]} s={[0.09, 3.6, 0.1]} c="#f8fafc" />)}
+            {<><Box p={[11.2, 2.3, -3.97]} s={[3.6, 1.4, 0.05]} c={pal.glass} e={pal.glassE} ei={pal.dark ? 0.9 : 0.5} /></>}
             {n === FLOORS && <><Box p={[3.2, 2.3, -3.97]} s={[3, 1.4, 0.05]} c={pal.glass} e={pal.glassE} ei={pal.dark ? 0.9 : 0.5} /><Box p={[-1.2, 2.3, -3.97]} s={[3, 1.4, 0.05]} c={pal.glass} e={pal.glassE} ei={pal.dark ? 0.9 : 0.5} /></>}
             {/* meja kerja lantai ini */}
             {DESKS.map((d, i) => {

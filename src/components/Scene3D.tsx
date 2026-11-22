@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Office } from "./Office";
 import { Character, agentObjects } from "./Character";
-import { FLOORS, FLOOR_H, floorOfY, floorY } from "@/lib/layout";
+import { B_CX, FLOORS, FLOOR_H, floorOfY, floorY } from "@/lib/layout";
 import { useMissionStore, type Focus } from "@/store/useMissionStore";
 import { DOWNGRADE_BELOW, QUALITY, QUALITY_ORDER } from "@/lib/quality";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -17,11 +17,11 @@ const along = (t: [number, number, number], d: [number, number, number], dist: n
   const v = new THREE.Vector3(...d).normalize().multiplyScalar(dist); return [t[0] + v.x, t[1] + v.y, t[2] + v.z];
 };
 const presetFor = (f: Focus): Cam => {
-  if (f === "all") { const t: [number, number, number] = [0, MID - 0.5, 0]; return { pos: along(t, [1, 0.62, 1], 52 + FLOORS * 8), target: t }; }
+  if (f === "all") { const t: [number, number, number] = [B_CX, MID - 0.5, 0]; return { pos: along(t, [1, 0.62, 1], 62 + FLOORS * 8), target: t }; }
   const n = Number(f), y = floorY(n);
   // lantai 5: sasaran digeser ke kanan-depan agar dek rooftop (banyak agen) ikut terbingkai
-  const t: [number, number, number] = n === FLOORS ? [2.6, y + 0.3, 1.8] : [0, y + 0.5, 0.3];
-  return { pos: along(t, [0.9, 1.0, 1], 54), target: t };
+  const t: [number, number, number] = n === FLOORS ? [7, y + 0.3, 1.0] : [B_CX, y + 0.5, 0.3];
+  return { pos: along(t, [0.9, 1.0, 1], 66), target: t };
 };
 
 /** Animasi halus kamera ke preset saat fokus berubah; setelah itu kontrol bebas kembali ke pengguna */
@@ -158,7 +158,7 @@ export default function Scene3D({ active = true }: { active?: boolean }) {
       <hemisphereLight args={[dark ? "#9db4e6" : "#ffffff", dark ? "#1b2540" : "#aeb4bf", dark ? 1.0 : 1.2]} />
       <ambientLight intensity={dark ? 0.25 : 0.25} />
       <directionalLight ref={light} position={[34, 70, 46]} intensity={dark ? 0.9 : 1.5} castShadow={q.shadows} shadow-mapSize={[q.shadowMap || 512, q.shadowMap || 512]}
-        shadow-camera-left={-28} shadow-camera-right={28} shadow-camera-top={36} shadow-camera-bottom={-16} shadow-camera-far={240} />
+        shadow-camera-left={-34} shadow-camera-right={34} shadow-camera-top={36} shadow-camera-bottom={-16} shadow-camera-far={240} />
       <Ground dark={dark} />
       <Office theme={theme} />
       {agents.map((a) => <Character key={a.id} agent={a} />)}

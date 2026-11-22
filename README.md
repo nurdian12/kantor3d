@@ -85,6 +85,7 @@ Server WebSocket (`server/mock-server.mjs`) hanya mock untuk pengembangan — ja
 ## Kantor 2 lantai & 14 divisi digital marketing
 Gaya visual mengikuti referensi kantor isometrik modern: dinding putih dengan jendela besar, LED neon, meja panjang putih, monitor lengkung, kursi ergonomis, layar dinding berisi kode/grafik, tanaman. Kamera isometrik (lensa panjang), latar abu-abu lembut.
 
+- **Gedung dilebarkan ke kanan (22 satuan).** Lantai 1 punya sayap *Pantry & Lounge Tamu* (bar kopi, sofa, rak pajangan); lantai 2 punya ruang *Billiard* (meja biliar, rak tongkat, papan dart, bar mini). Agen Idle juga bermain di sekitar meja biliar (`pool()` di `layout.ts`).
 - **Lantai 1 = area kerja** semua 14 divisi (15 meja, 3 baris × 5; `deskIndex` = baris×5+kolom). **Lantai 2 = istirahat** (lounge, 2 kamar, rooftop; 14 spot). Agen Working/Error duduk di meja, Idle naik tangga ke lantai 2.
 - Satu agen per divisi; nama/peran/warna/meja/sumber data ada di satu tempat: `src/lib/agentsMeta.ts`. Perabot ada di `src/components/props.tsx`, tata letak di `Office.tsx`, jumlah lantai/meja di `src/lib/layout.ts`.
 - **Data nyata (6 divisi):** Orbit (jadwal & posting gagal), Sapa (komentar), Kompas (statistik akun), Vega (funnel kontak/CRM), Lumi (aset di storage), Nova (ringkasan alur).

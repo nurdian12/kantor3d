@@ -3,7 +3,11 @@ import type { Pose } from "./types";
 /** Koordinat dunia (x, z). Lantai n berada di y = (n-1) * FLOOR_H. */
 export const FLOOR_H = 5.6;
 export const FLOORS = 2;
-export const BUILDING = { minX: -8, maxX: 8, minZ: -4, maxZ: 4 };
+export const BUILDING = { minX: -8, maxX: 14, minZ: -4, maxZ: 4 };
+/** Tengah & lebar gedung (x) */
+export const B_CX = (BUILDING.minX + BUILDING.maxX) / 2, B_W = BUILDING.maxX - BUILDING.minX;
+/** Ruang billiard di lantai 2 (sayap kanan) */
+export const BILLIARD = { minX: 8.4, maxX: 14, minZ: -4, maxZ: 4, table: [11.2, -0.6] as [number, number] };
 /** Dek balkon rooftop yang menjorok keluar di lantai 5 */
 export const BALCONY = { minX: 3.9, maxX: 8, minZ: -4, maxZ: 6 };
 
@@ -44,9 +48,10 @@ const Y5 = floorY(FLOORS);
 const sit = (x: number): Spot => ({ pos: [x, Y5, -3.2], rotY: 0, pose: "sit", floor: FLOORS, label: "Lounge" });
 const bed = (x: number): Spot => ({ pos: [x, Y5, -1.7], rotY: 0, pose: "lie", floor: FLOORS, label: "Kamar Tidur" });
 const roof = (x: number, z: number): Spot => ({ pos: [x, Y5, z], rotY: 0, pose: "stand", floor: FLOORS, label: "Rooftop" });
+const pool = (x: number, z: number, rotY: number): Spot => ({ pos: [x, Y5, z], rotY, pose: "stand", floor: FLOORS, label: "Billiard" });
 export const IDLE_SPOTS: Spot[] = [
   sit(-4.4), bed(0.2), roof(4.6, 5.3), sit(-3.4), bed(2.6), roof(5.4, 5.3), sit(-2.4),
-  roof(6.2, 5.3), roof(7.0, 5.3), roof(7.8, 5.3), roof(5.0, 4.4), roof(5.8, 4.4), roof(6.6, 4.4), roof(7.4, 4.4),
+  roof(6.2, 5.3), pool(11.0, 0.9, Math.PI), pool(12.0, -2.2, 0), roof(5.0, 4.4), pool(9.0, -0.6, Math.PI / 2), roof(6.6, 4.4), pool(13.4, -0.6, -Math.PI / 2),
 ];
 
 /** Kapasitas spot istirahat; agen ke-N memakai spot (N mod kapasitas) */
