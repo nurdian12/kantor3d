@@ -114,7 +114,7 @@ export const useMissionStore = create<MissionState>((set, get) => ({
     get().addLog(
       id,
       status === "error" ? "error" : status === "idle" ? "warn" : "info",
-      status === "working" ? `Mulai bekerja: ${task}` : status === "idle" ? "Berpindah ke area istirahat (lantai 5)" : task,
+      status === "working" ? `Mulai bekerja: ${task}` : status === "idle" ? "Berpindah ke area istirahat (lantai 2)" : task,
     );
   },
   cycleStatus: (id) => {

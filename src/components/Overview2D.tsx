@@ -43,11 +43,11 @@ function Plan({ floor }: { floor: number }) {
             </>
           ) : (
             <>
-              <Zone x={-6} z={-4} w={14} d={8} label={info.name} tint="bg-amber-100/40 dark:bg-amber-400/10" />
+              <Zone x={-6} z={-4} w={14} d={8} label="Area kerja semua divisi" tint="bg-sky-100/50 dark:bg-sky-400/10" />
               {DESKS.map((d, i) => d.floor !== floor ? null : (
                 <div key={i} className="absolute -translate-x-1/2 rounded-md border border-slate-400/60 bg-white/70 text-center text-[9px] leading-[22px] text-slate-500 dark:bg-slate-700/60 dark:text-slate-300"
-                  style={{ left: pct(d.pos[0], BUILDING.minX, W), top: pct(d.pos[2] - 1.7, BUILDING.minZ, D), width: "10%", height: "12%" }}>
-                  Meja {(i % 4) + 1}
+                  style={{ left: pct(d.pos[0], BUILDING.minX, W), top: pct(d.pos[2] - 1.7, BUILDING.minZ, D), width: "9%", height: "10%" }}>
+                  {i + 1}
                 </div>
               ))}
             </>

@@ -1,6 +1,7 @@
 "use client";
 import type { SocialSummary } from "@/lib/repliz";
 import { AGENT_META } from "@/lib/agentsMeta";
+import { DESK_ROW_NAMES } from "@/lib/layout";
 import { useMissionStore } from "@/store/useMissionStore";
 import { useWorkStore } from "@/store/useWorkStore";
 import { card, fmtTokens } from "./ui";
@@ -29,19 +30,19 @@ const STAGE_DOT = { working: "bg-emerald-500", idle: "bg-sky-500", error: "bg-re
 /** Peta divisi digital marketing: satu agen per divisi, lengkap dengan lantai, status, dan apakah datanya nyata */
 function DivisionMap() {
   const agents = useMissionStore((s) => s.agents);
-  const items = AGENT_META.map((m) => ({ m, a: agents.find((x) => x.id === m.id), floor: Math.floor(m.deskIndex / 4) + 1 })).sort((x, y) => y.floor - x.floor || x.m.deskIndex - y.m.deskIndex);
+  const items = AGENT_META.map((m) => ({ m, a: agents.find((x) => x.id === m.id), row: Math.floor(m.deskIndex / 5) })).sort((x, y) => x.m.deskIndex - y.m.deskIndex);
   const live = AGENT_META.filter((m) => m.source === "real").length;
   return (
     <section className={`${card} p-4`} aria-label="Divisi digital marketing">
       <h2 className="mb-1 text-sm font-semibold">Divisi digital marketing ({AGENT_META.length})</h2>
       <p className="mb-3 text-[11px] text-slate-500">{live} divisi memakai data nyata dari Repliz · {AGENT_META.length - live} belum terhubung (alasannya tertulis di tiap kartu)</p>
       <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {items.map(({ m, a, floor }) => {
+        {items.map(({ m, a, row }) => {
           const off = m.source === "none";
           return (
             <li key={m.id} className={`rounded-xl border p-3 text-xs ${off ? "border-dashed border-slate-300 dark:border-slate-600" : "border-slate-200 dark:border-slate-700"}`}>
               <p className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                <span>Lantai {floor}</span><span className={off ? "" : "text-indigo-500"}>{off ? "Belum terhubung" : "Repliz"}</span>
+                <span>{DESK_ROW_NAMES[row]}</span><span className={off ? "" : "text-indigo-500"}>{off ? "Belum terhubung" : "Repliz"}</span>
               </p>
               <p className="mt-1 flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-100">
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: m.color }} />

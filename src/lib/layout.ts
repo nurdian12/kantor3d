@@ -1,8 +1,8 @@
 import type { Pose } from "./types";
 
 /** Koordinat dunia (x, z). Lantai n berada di y = (n-1) * FLOOR_H. */
-export const FLOOR_H = 4;
-export const FLOORS = 5;
+export const FLOOR_H = 5.6;
+export const FLOORS = 2;
 export const BUILDING = { minX: -8, maxX: 8, minZ: -4, maxZ: 4 };
 /** Dek balkon rooftop yang menjorok keluar di lantai 5 */
 export const BALCONY = { minX: 3.9, maxX: 8, minZ: -4, maxZ: 6 };
@@ -10,14 +10,13 @@ export const BALCONY = { minX: 3.9, maxX: 8, minZ: -4, maxZ: 6 };
 export const floorY = (n: number) => (n - 1) * FLOOR_H;
 export const floorOfY = (y: number) => Math.min(FLOORS, Math.max(1, Math.round(y / FLOOR_H) + 1));
 
-/** Fungsi tiap lantai (dipakai label 3D dan denah 2D). Lantai 1-4 = area kerja, lantai 5 = istirahat. */
+/** Lantai 1 = area kerja semua divisi; lantai 2 = istirahat (lounge, kamar, rooftop). */
 export const FLOOR_INFO: Array<{ n: number; name: string; short: string; accent: string }> = [
-  { n: 1, name: "Lobi & Hubungan Pelanggan", short: "Lobi", accent: "#06b6d4" },
-  { n: 2, name: "Studio Kreatif", short: "Studio", accent: "#f59e0b" },
-  { n: 3, name: "Riset, SEO & Analitik", short: "Riset", accent: "#10b981" },
-  { n: 4, name: "Kontrol & Iklan", short: "Kontrol", accent: "#6366f1" },
-  { n: 5, name: "Santai & Rooftop", short: "Santai", accent: "#ec4899" },
+  { n: 1, name: "Area Kerja · 14 Divisi", short: "Kerja", accent: "#38bdf8" },
+  { n: 2, name: "Istirahat & Rooftop", short: "Santai", accent: "#ec4899" },
 ];
+/** Tiga baris meja di lantai 1 (dari belakang ke depan) = kelompok divisi */
+export const DESK_ROW_NAMES = ["Kontrol & Iklan", "Riset & Kreatif", "Hubungan Pelanggan"];
 
 export interface Spot {
   pos: [number, number, number];
@@ -28,22 +27,23 @@ export interface Spot {
 }
 
 /**
- * 16 workstation: 4 meja di tiap lantai kerja (1-4), menghadap -z (dinding belakang).
- * Urutan indeks: lantai 1 (0-3), lantai 2 (4-7), lantai 3 (8-11), lantai 4 (12-15).
+ * 15 workstation di lantai 1: 3 baris x 5 meja (bangku panjang putih), menghadap -z (dinding belakang).
+ * Indeks = baris * 5 + kolom. Koridor di kiri (x < -4.6) dibiarkan kosong untuk akses tangga.
  */
-export const DESK_COLS = [-4.5, -1.5, 1.5, 4.5];
-export const DESKS: Spot[] = [1, 2, 3, 4].flatMap((n) =>
-  DESK_COLS.map((x, c): Spot => ({ pos: [x, floorY(n), -1.3], rotY: Math.PI, pose: "sit", floor: n, label: `${FLOOR_INFO[n - 1].short} · meja ${c + 1}` })),
+export const DESK_COLS = [-3.45, -1.15, 1.15, 3.45, 5.75];
+export const DESK_ROWS = [-2.2, 0.4, 3.0]; // posisi z orang yang duduk; meja digeser 1.1 ke belakang
+export const DESKS: Spot[] = DESK_ROWS.flatMap((z, r) =>
+  DESK_COLS.map((x, c): Spot => ({ pos: [x, 0, z], rotY: Math.PI, pose: "sit", floor: 1, label: `${DESK_ROW_NAMES[r]} · meja ${c + 1}` })),
 );
 
 /**
- * 14 spot istirahat di lantai 5: 3 kursi sofa lounge, 2 kasur, 9 posisi di dek rooftop.
+ * 14 spot istirahat di lantai istirahat (paling atas): 3 kursi sofa lounge, 2 kasur, 9 posisi di dek rooftop.
  * Urutan diselang-seling (lounge, kamar, rooftop, ...) agar agen pertama tersebar.
  */
-const Y5 = floorY(5);
-const sit = (x: number): Spot => ({ pos: [x, Y5, -3.2], rotY: 0, pose: "sit", floor: 5, label: "Lounge" });
-const bed = (x: number): Spot => ({ pos: [x, Y5, -1.7], rotY: 0, pose: "lie", floor: 5, label: "Kamar Tidur" });
-const roof = (x: number, z: number): Spot => ({ pos: [x, Y5, z], rotY: 0, pose: "stand", floor: 5, label: "Rooftop" });
+const Y5 = floorY(FLOORS);
+const sit = (x: number): Spot => ({ pos: [x, Y5, -3.2], rotY: 0, pose: "sit", floor: FLOORS, label: "Lounge" });
+const bed = (x: number): Spot => ({ pos: [x, Y5, -1.7], rotY: 0, pose: "lie", floor: FLOORS, label: "Kamar Tidur" });
+const roof = (x: number, z: number): Spot => ({ pos: [x, Y5, z], rotY: 0, pose: "stand", floor: FLOORS, label: "Rooftop" });
 export const IDLE_SPOTS: Spot[] = [
   sit(-4.4), bed(0.2), roof(4.6, 5.3), sit(-3.4), bed(2.6), roof(5.4, 5.3), sit(-2.4),
   roof(6.2, 5.3), roof(7.0, 5.3), roof(7.8, 5.3), roof(5.0, 4.4), roof(5.8, 4.4), roof(6.6, 4.4), roof(7.4, 4.4),
@@ -84,7 +84,7 @@ export function stairPath(a: number, b: number): V3[] {
 export const landingZ = (n: number) => (flightEndZ(n - 1) === Z_BACK ? -3 : 3);
 
 /** Lantai n terlihat bila fokus "all" atau n <= lantai yang difokuskan (lantai di atasnya disembunyikan) */
-export type Focus = "all" | "1" | "2" | "3" | "4" | "5";
+export type Focus = "all" | "1" | "2";
 export const floorVisible = (focus: Focus, n: number) => focus === "all" || n <= Number(focus);
 
 /** Karakter (dan label namanya) hanya tampil di lantai yang difokuskan; label HTML tidak ter-oklusi lantai, jadi lantai lain disembunyikan */

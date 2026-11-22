@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useMissionStore, type Tab } from "@/store/useMissionStore";
 import { useWorkStore } from "@/store/useWorkStore";
 import { QUALITY, type Quality } from "@/lib/quality";
-import { FLOOR_INFO } from "@/lib/layout";
+import { FLOOR_INFO, type Focus } from "@/lib/layout";
 import { useReplizSync } from "@/lib/useReplizSync";
 import TasksView from "./views/TasksView";
 import CalendarView from "./views/CalendarView";
@@ -104,7 +104,7 @@ export default function Dashboard() {
           {viewMode === "2d" && <Overview2D />}
           {viewMode === "3d" && (
             <div className="absolute left-4 top-4 flex rounded-xl bg-white/80 p-1 shadow backdrop-blur dark:bg-slate-900/80" role="group" aria-label="Fokus lantai">
-              {([["all", "Semua"], ["1", "L1"], ["2", "L2"], ["3", "L3"], ["4", "L4"], ["5", "L5"]] as const).map(([k, label]) => (
+              {([["all", "Semua"], ...FLOOR_INFO.map((f) => [String(f.n), `L${f.n}`])] as Array<[Focus, string]>).map(([k, label]) => (
                 <button key={k} onClick={() => setFocus(k)} title={k === "all" ? "Tampilkan seluruh gedung" : `Fokus lantai ${k}: ${FLOOR_INFO[Number(k) - 1].name}`} className={btn(focus === k)}>{label}</button>
               ))}
             </div>

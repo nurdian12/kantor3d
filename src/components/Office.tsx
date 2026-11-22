@@ -4,145 +4,89 @@ import { BALCONY, DESKS, FLOORS, FLOOR_H, FLOOR_INFO, STAIR_X, floorVisible, fli
 import type { Theme } from "@/store/useMissionStore";
 import { useMissionStore } from "@/store/useMissionStore";
 import { QUALITY } from "@/lib/quality";
+import { Box, BarStool, CurvedMonitor, ErgoChair, HangingPlant, Led, Plant, Sofa, WallScreen, type V3 } from "./props";
 
-type V3 = [number, number, number];
 const H = FLOOR_H;
 
-function Box({ p, s, c, o, e, cast = false, r }: { p: V3; s: V3; c: string; o?: number; e?: string; cast?: boolean; r?: V3 }) {
-  return (
-    <mesh position={p} rotation={r} castShadow={cast} receiveShadow>
-      <boxGeometry args={s} />
-      <meshStandardMaterial color={c} transparent={o !== undefined} opacity={o ?? 1} emissive={e ?? "#000"} emissiveIntensity={e ? 0.9 : 0} />
-    </mesh>
-  );
+interface Pal {
+  dark: boolean; wall: string; wallSide: string; floor: string; floorG: string; edge: string; desk: string; glass: string; glassE: string;
+  rug: string; wood: string; sofa: string; neonA: string; neonB: string; stair: string; stair2: string;
 }
-
-function Plant({ p }: { p: V3 }) {
-  return (
-    <group position={p}>
-      <Box p={[0, 0.25, 0]} s={[0.4, 0.5, 0.4]} c="#b45309" />
-      <mesh position={[0, 0.85, 0]} castShadow><sphereGeometry args={[0.38, 12, 12]} /><meshStandardMaterial color="#16a34a" /></mesh>
-    </group>
-  );
-}
-
-function Desk({ x, z, color, agentColor, active }: { x: number; z: number; color: string; agentColor: string; active: boolean }) {
-  return (
-    <group position={[x, 0, z]}>
-      <Box p={[0, 0.75, 0]} s={[1.9, 0.07, 0.95]} c={color} />
-      <Box p={[-0.85, 0.37, 0]} s={[0.07, 0.74, 0.85]} c="#475569" />
-      <Box p={[0.85, 0.37, 0]} s={[0.07, 0.74, 0.85]} c="#475569" />
-      <Box p={[0, 1.2, -0.25]} s={[0.9, 0.55, 0.05]} c="#0f172a" />
-      <Box p={[0, 1.2, -0.215]} s={[0.82, 0.47, 0.01]} c={active ? agentColor : "#1e293b"} e={active ? agentColor : undefined} cast={false} />
-      <Box p={[0, 0.88, -0.25]} s={[0.1, 0.2, 0.1]} c="#334155" />
-      <Box p={[0, 0.8, 0.12]} s={[0.55, 0.03, 0.18]} c="#94a3b8" />
-      <group position={[0, 0, 1.0]}>
-        <Box p={[0, 0.4, 0.1]} s={[0.6, 0.08, 0.6]} c="#1e293b" />
-        <Box p={[0, 0.75, 0.38]} s={[0.55, 0.65, 0.07]} c="#1e293b" />
-        <Box p={[0, 0.2, 0.1]} s={[0.08, 0.4, 0.08]} c="#64748b" />
-      </group>
-    </group>
-  );
-}
+const LIGHT: Pal = { dark: false, wall: "#f6f7f9", wallSide: "#eef0f4", floor: "#ebedf1", floorG: "#e3e6ec", edge: "#cdd2da", desk: "#ffffff", glass: "#dff0ff", glassE: "#a9d4f7", rug: "#c9d1de", wood: "#d9c7a3", sofa: "#9aa6b8", neonA: "#38bdf8", neonB: "#22c55e", stair: "#e5e7eb", stair2: "#f3f4f6" };
+const DARK: Pal = { dark: true, wall: "#3b4766", wallSide: "#44506f", floor: "#34405e", floorG: "#2f3a56", edge: "#242c44", desk: "#dfe4ec", glass: "#17314f", glassE: "#38bdf8", rug: "#1c2842", wood: "#6b5a45", sofa: "#586377", neonA: "#38bdf8", neonB: "#34d399", stair: "#9aa5b8", stair2: "#b4bdcc" };
 
 /** Tangga k: lantai k -> k+1 (koordinat lokal grup lantai k). Anak tangga tipis + penyangga miring + pegangan. */
-function Flight({ k }: { k: number }) {
-  const n = 16, zs = flightStartZ(k), ze = flightEndZ(k), dz = (ze - zs) / n;
+function Flight({ k, pal }: { k: number; pal: Pal }) {
+  const n = 22, zs = flightStartZ(k), ze = flightEndZ(k), dz = (ze - zs) / n;
   const len = Math.hypot(H, ze - zs), tilt = -Math.atan(H / (ze - zs));
   return (
     <group>
       {Array.from({ length: n }, (_, i) => (
-        <Box key={i} p={[STAIR_X, ((i + 1) * H) / n - 0.1, zs + (i + 0.5) * dz]} s={[1.1, 0.2, Math.abs(dz) + 0.02]} c={i % 2 ? "#cbd5e1" : "#e2e8f0"} />
+        <Box key={i} p={[STAIR_X, ((i + 1) * H) / n - 0.1, zs + (i + 0.5) * dz]} s={[1.1, 0.2, Math.abs(dz) + 0.02]} c={i % 2 ? pal.stair : pal.stair2} />
       ))}
-      <Box p={[STAIR_X, H / 2 - 0.35, (zs + ze) / 2]} s={[0.9, 0.2, len]} c="#94a3b8" r={[tilt, 0, 0]} />
-      <Box p={[-7.6, H / 2 + 0.7, (zs + ze) / 2]} s={[0.05, 0.05, len]} c="#94a3b8" cast={false} r={[tilt, 0, 0]} />
+      <Box p={[STAIR_X, H / 2 - 0.35, (zs + ze) / 2]} s={[0.9, 0.2, len]} c="#8b95a7" r={[tilt, 0, 0]} />
+      <Box p={[-7.6, H / 2 + 0.7, (zs + ze) / 2]} s={[0.05, 0.05, len]} c="#b6bfcd" r={[tilt, 0, 0]} />
     </group>
   );
 }
 
 function Label({ p, children }: { p: V3; children: React.ReactNode }) {
   return (
-    <Html position={p} center distanceFactor={14} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
-      <div className="whitespace-nowrap rounded-md bg-slate-900/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur">{children}</div>
+    <Html position={p} center distanceFactor={20} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
+      <div className="whitespace-nowrap rounded-md bg-slate-900/75 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur">{children}</div>
     </Html>
   );
 }
 
-interface Pal { dark: boolean; floor: string; wallSide: string; desk: string; glass: string; glassE?: string }
+/** Meja panjang putih (tiap meja = satu segmen bangku) + monitor lengkung + kursi ergonomis */
+function Desk({ x, z, pal, agentColor, active, glow, seed, last }: { x: number; z: number; pal: Pal; agentColor: string; active: boolean; glow: boolean; seed: number; last: boolean }) {
+  return (
+    <group position={[x, 0, z]}>
+      <Box p={[0, 0.75, 0]} s={[2.22, 0.06, 0.98]} c={pal.desk} cast />
+      <Box p={[-1.07, 0.37, 0]} s={[0.05, 0.74, 0.86]} c="#aeb6c3" /><Box p={[1.07, 0.37, 0]} s={[0.05, 0.74, 0.86]} c="#aeb6c3" />
+      <Led p={[0, 0.69, 0.47]} s={[2.1, 0.02, 0.02]} c={pal.neonA} glow={glow} />
+      <CurvedMonitor p={[0, 0.78, -0.27]} active={active} color={agentColor} seed={seed} />
+      <Box p={[0, 0.8, 0.13]} s={[0.5, 0.02, 0.17]} c="#e5e7eb" /><Box p={[0.45, 0.8, 0.14]} s={[0.06, 0.02, 0.1]} c="#e5e7eb" />
+      <ErgoChair p={[0, 0, 1.0]} />
+      {last && (<><Box p={[1.42, 0.34, -0.1]} s={[0.32, 0.62, 0.52]} c="#111827" /><Led p={[1.42, 0.34, 0.17]} s={[0.04, 0.5, 0.02]} c={pal.neonB} glow={glow} /></>)}
+    </group>
+  );
+}
 
 /** Perabot khas tiap lantai (koordinat lokal; y=0 adalah lantai) */
-function FloorProps({ n, pal }: { n: number; pal: Pal }) {
+function FloorProps({ n, pal, glow }: { n: number; pal: Pal; glow: boolean }) {
   const { dark } = pal;
+  const white = dark ? "#cfd6e2" : "#ffffff";
   switch (n) {
-    case 1: // Lobi & Komunitas: meja resepsionis, sofa tunggu
+    case 1: // Area kerja semua divisi: layar dinding di atas baris belakang, tanaman, label kelompok divisi
       return (
         <>
-          <Box p={[5.6, 0.55, 2.4]} s={[3.2, 1.1, 0.8]} c={dark ? "#0e7490" : "#67e8f9"} />
-          <Box p={[5.6, 1.14, 2.4]} s={[3.3, 0.08, 0.9]} c={dark ? "#cbd5e1" : "#ffffff"} />
-          <Box p={[-3.6, 0.3, 2.7]} s={[2.6, 0.6, 0.9]} c="#0891b2" />
-          <Box p={[-3.6, 0.8, 3.1]} s={[2.6, 0.7, 0.2]} c="#0e7490" />
-          <Box p={[-3.6, 0.01, 1.7]} s={[3.6, 0.02, 2.4]} c={dark ? "#164e63" : "#a5f3fc"} cast={false} />
-          <Plant p={[-5.7, 0, -3.4]} /><Plant p={[7.2, 0, -3.4]} />
+          <WallScreen p={[-3.4, 3.0, -3.9]} w={3.2} h={1.25} kind="code" seed={2} /><WallScreen p={[0.3, 3.0, -3.9]} w={3.2} h={1.25} kind="chart" seed={3} /><WallScreen p={[4.0, 3.0, -3.9]} w={3.2} h={1.25} kind="dash" seed={5} />
+          <Plant p={[-6.4, 0, -3.4]} big /><Plant p={[7.5, 0, -3.4]} big /><Plant p={[7.5, 0, 3.5]} /><HangingPlant p={[7.0, 2.7, -3.7]} />
         </>
       );
-    case 2: // Studio Konten: ring light, kamera, backdrop
+    default: // Lantai istirahat: lounge, kamar tidur, rooftop
       return (
         <>
-          <Box p={[5.8, 0.9, 1.8]} s={[0.06, 1.8, 0.06]} c="#94a3b8" />
-          <mesh position={[5.8, 1.85, 1.8]} castShadow><torusGeometry args={[0.38, 0.05, 12, 28]} /><meshStandardMaterial color="#ffffff" emissive="#fff7d6" emissiveIntensity={1.2} /></mesh>
-          <Box p={[5.8, 0.55, 0.7]} s={[0.05, 1.1, 0.05]} c="#94a3b8" />
-          <Box p={[5.8, 1.2, 0.7]} s={[0.4, 0.28, 0.3]} c="#0f172a" />
-          <Box p={[7.1, 1.5, -1.0]} s={[0.1, 3, 3.2]} c={dark ? "#b45309" : "#fcd34d"} />
-          <Box p={[-5.6, 0.6, 2.4]} s={[1.2, 1.2, 1.2]} c="#64748b" /><Plant p={[-5.7, 0, -3.4]} />
-        </>
-      );
-    case 3: // Riset & Analitik: dinding data, rak server
-      return (
-        <>
-          {DESKS.filter((d) => d.floor === 3).map((d, i) => <Box key={i} p={[d.pos[0], 2.65, -3.9]} s={[2.3, 1.1, 0.08]} c="#0f172a" />)}
-          {DESKS.filter((d) => d.floor === 3).map((d, i) => <Box key={"s" + i} p={[d.pos[0], 2.65, -3.85]} s={[2.15, 0.95, 0.02]} c={i % 2 ? "#8b5cf6" : "#10b981"} e={i % 2 ? "#8b5cf6" : "#10b981"} cast={false} />)}
-          <Box p={[7.1, 1.0, -3.0]} s={[0.9, 2.0, 0.9]} c="#1e293b" /><Box p={[7.1, 1.4, -2.54]} s={[0.7, 0.08, 0.02]} c="#22c55e" e="#22c55e" cast={false} />
-          <Plant p={[-5.7, 0, -3.4]} />
-        </>
-      );
-    case 4: // Ruang Kontrol: layar kalender besar, meja rapat
-      return (
-        <>
-          <Box p={[0.5, 2.55, -3.93]} s={[9, 2.1, 0.08]} c="#0f172a" />
-          <Box p={[0.5, 2.55, -3.88]} s={[8.8, 1.9, 0.02]} c="#6366f1" e="#4f46e5" cast={false} />
-          <Box p={[1, 0.72, 2.6]} s={[3.4, 0.1, 1.3]} c={dark ? "#8a6a45" : "#c89b6a"} />
-          <Box p={[-0.2, 0.36, 2.6]} s={[0.1, 0.72, 0.9]} c="#475569" /><Box p={[2.2, 0.36, 2.6]} s={[0.1, 0.72, 0.9]} c="#475569" />
-          {[-0.3, 1, 2.3].map((x) => <Box key={x} p={[x, 0.42, 3.55]} s={[0.55, 0.08, 0.5]} c="#1e293b" />)}
-          <Plant p={[-5.7, 0, -3.4]} /><Plant p={[7.2, 0, 3.4]} />
-        </>
-      );
-    default: // Lantai 5: lounge, kamar tidur, rooftop
-      return (
-        <>
-          <Box p={[-3.4, 0.25, -3.5]} s={[3, 0.5, 0.9]} c="#7c3aed" />
-          <Box p={[-3.4, 0.75, -3.85]} s={[3, 0.6, 0.25]} c="#6d28d9" />
-          <Box p={[-4.85, 0.45, -3.5]} s={[0.25, 0.9, 0.9]} c="#6d28d9" />
-          <Box p={[-1.95, 0.45, -3.5]} s={[0.25, 0.9, 0.9]} c="#6d28d9" />
-          <Box p={[-3.4, 0.01, -1.4]} s={[3.4, 0.02, 2.2]} c={dark ? "#4c3d8f" : "#fca5a5"} cast={false} />
-          <Box p={[-3.4, 0.25, -1.4]} s={[1.2, 0.08, 0.7]} c="#d6b88a" /><Box p={[-3.4, 0.12, -1.4]} s={[1.1, 0.24, 0.6]} c="#a07a4a" />
-          <Box p={[-3.4, 2.0, -3.96]} s={[2.2, 1.2, 0.08]} c="#0f172a" /><Box p={[-3.4, 2.0, -3.9]} s={[2.06, 1.06, 0.02]} c="#38bdf8" e="#0ea5e9" cast={false} />
-          <Plant p={[-5.4, 0, -3.4]} />
+          <Box p={[-3.4, 0.01, -1.4]} s={[3.6, 0.02, 2.4]} c={pal.rug} /><Sofa p={[-3.4, 0, -3.5]} n={3} color={pal.sofa} />
+          <Box p={[-3.4, 0.25, -1.4]} s={[1.2, 0.08, 0.7]} c={pal.wood} /><Box p={[-3.4, 0.12, -1.4]} s={[1.0, 0.24, 0.5]} c="#9ca3af" />
+          <WallScreen p={[-3.4, 2.0, -3.9]} w={2.4} h={1.2} kind="code" seed={7} />
+          <Plant p={[-5.7, 0, -3.4]} big /><HangingPlant p={[-1.6, 2.4, -3.7]} />
           <Label p={[-3.4, 2.3, -2.2]}>Lounge</Label>
-          <Box p={[-1.1, 1.1, -2.4]} s={[0.12, 2.2, 3.2]} c={pal.wallSide} o={0.5} /><Box p={[3.9, 1.1, -2.4]} s={[0.12, 2.2, 3.2]} c={pal.wallSide} o={0.5} />
+          <Box p={[-1.1, 1.1, -2.4]} s={[0.12, 2.2, 3.2]} c={pal.glass} o={0.45} /><Box p={[3.9, 1.1, -2.4]} s={[0.12, 2.2, 3.2]} c={pal.glass} o={0.45} />
           {[0.2, 2.6].map((bx) => (
             <group key={bx}>
-              <Box p={[bx, 0.25, -2.4]} s={[1.5, 0.5, 2.7]} c="#475569" /><Box p={[bx, 0.55, -2.4]} s={[1.4, 0.14, 2.6]} c="#f1f5f9" />
-              <Box p={[bx, 0.72, -3.35]} s={[0.9, 0.18, 0.5]} c="#e2e8f0" /><Box p={[bx, 0.9, -3.9]} s={[1.6, 1.3, 0.1]} c="#92400e" />
+              <Box p={[bx, 0.2, -2.4]} s={[1.55, 0.4, 2.75]} c={pal.wood} /><Box p={[bx, 0.5, -2.4]} s={[1.45, 0.16, 2.6]} c="#f8fafc" />
+              <Box p={[bx, 0.68, -3.35]} s={[0.9, 0.18, 0.5]} c="#e2e8f0" /><Box p={[bx, 0.95, -3.92]} s={[1.65, 1.4, 0.08]} c={pal.wood} />
             </group>
           ))}
-          <Box p={[1.4, 0.3, -3.5]} s={[0.4, 0.6, 0.5]} c="#92400e" /><Box p={[1.4, 0.9, -3.5]} s={[0.1, 0.4, 0.1]} c="#fde68a" e="#fbbf24" cast={false} />
+          <Box p={[1.4, 0.3, -3.5]} s={[0.4, 0.6, 0.5]} c={pal.wood} /><Box p={[1.4, 0.8, -3.5]} s={[0.1, 0.4, 0.1]} c="#fde68a" e="#fbbf24" ei={1.2} />
           <Label p={[1.4, 2.4, -2.2]}>Kamar Tidur</Label>
           {/* dek rooftop */}
-          <Box p={[(BALCONY.minX + BALCONY.maxX) / 2, -0.15, (BALCONY.minZ + BALCONY.maxZ) / 2]} s={[BALCONY.maxX - BALCONY.minX, 0.3, BALCONY.maxZ - BALCONY.minZ]} c={dark ? "#3a4a52" : "#b9a88a"} />
-          <Box p={[6.1, 0.5, 6]} s={[3.8, 0.05, 0.05]} c="#94a3b8" cast={false} /><Box p={[8, 0.5, 1]} s={[0.05, 0.05, 10]} c="#94a3b8" cast={false} /><Box p={[4.2, 0.5, 5]} s={[0.05, 0.05, 2]} c="#94a3b8" cast={false} />
-          <Box p={[6.1, 0.25, 6]} s={[3.8, 0.03, 0.03]} c="#94a3b8" cast={false} /><Box p={[8, 0.25, 1]} s={[0.03, 0.03, 10]} c="#94a3b8" cast={false} />
-          <Plant p={[7.4, 0, 4.5]} /><Plant p={[4.8, 0, 4.5]} />
-          <Box p={[6.2, 0.3, 4.3]} s={[1.6, 0.04, 1.0]} c="#0ea5e9" cast={false} />
+          <Box p={[(BALCONY.minX + BALCONY.maxX) / 2, -0.17, (BALCONY.minZ + BALCONY.maxZ) / 2]} s={[BALCONY.maxX - BALCONY.minX, 0.34, BALCONY.maxZ - BALCONY.minZ]} c={pal.wood} cast />
+          <Box p={[6.1, 0.52, 6]} s={[3.8, 0.9, 0.03]} c={pal.glass} o={0.4} /><Box p={[8, 0.52, 1]} s={[0.03, 0.9, 10]} c={pal.glass} o={0.4} /><Box p={[4.2, 0.52, 5]} s={[0.03, 0.9, 2]} c={pal.glass} o={0.4} />
+          <Box p={[6.1, 0.98, 6]} s={[3.8, 0.04, 0.05]} c="#cbd5e1" /><Box p={[8, 0.98, 1]} s={[0.05, 0.04, 10]} c="#cbd5e1" />
+          <Plant p={[7.5, 0, 3.4]} big /><Plant p={[4.3, 0, 3.4]} />
           <Label p={[6.1, 2.0, 4.6]}>Rooftop</Label>
         </>
       );
@@ -150,50 +94,53 @@ function FloorProps({ n, pal }: { n: number; pal: Pal }) {
 }
 
 export function Office({ theme }: { theme: Theme }) {
-  const dark = theme === "dark";
+  const pal = theme === "dark" ? DARK : LIGHT;
   const agents = useMissionStore((s) => s.agents);
   const focus = useMissionStore((s) => s.focus);
   const pointLights = useMissionStore((s) => QUALITY[s.quality].pointLights);
   const decor = useMissionStore((s) => QUALITY[s.quality].decor);
-  const pal: Pal = {
-    dark, floor: dark ? "#53628c" : "#f1e7d3", wallSide: dark ? "#4a5a8a" : "#e2e8f0", desk: dark ? "#8a6a45" : "#c89b6a",
-    glass: dark ? "#7dd3fc" : "#bae6fd", glassE: dark ? "#38bdf8" : undefined,
-  };
-  const wall = dark ? "#34426b" : "#f8fafc";
+  const glow = useMissionStore((s) => QUALITY[s.quality].glow);
   const top = focus === "all" ? FLOORS : Number(focus);        // jumlah lantai yang digambar
   const floors = Array.from({ length: top }, (_, i) => i + 1);
 
   return (
     <group>
-      {/* dinding belakang / kiri / kanan (cutaway: depan terbuka); tinggi mengikuti lantai yang tampil */}
-      <Box p={[0, (top * H) / 2, -4.1]} s={[16.4, top * H + 0.2, 0.2]} c={wall} />
-      <Box p={[-8.1, (top * H) / 2, 0]} s={[0.2, top * H + 0.2, 8.4]} c={pal.wallSide} o={0.55} />
-      <Box p={[8.1, (Math.min(top, FLOORS - 1) * H) / 2, 0]} s={[0.2, Math.min(top, FLOORS - 1) * H, 8.4]} c={pal.wallSide} o={0.55} />
+      {/* dinding belakang & kiri opak (seperti ruang referensi); kanan terbuka agar bagian dalam terlihat */}
+      <Box p={[0, (top * H) / 2, -4.1]} s={[16.4, top * H + 0.2, 0.2]} c={pal.wall} />
+      <Box p={[-8.1, (top * H) / 2, 0]} s={[0.2, top * H + 0.2, 8.4]} c={pal.wallSide} />
+      {/* plinth gelap di dasar gedung */}
+      <Box p={[0, -0.5, 0]} s={[16.8, 0.3, 8.8]} c={pal.dark ? "#10162a" : "#59606d"} />
 
       {floors.filter((n) => floorVisible(focus, n)).map((n) => {
         const info = FLOOR_INFO[n - 1];
         return (
           <group key={n} position={[0, floorY(n), 0]}>
-            {/* lantai (slab): lantai 1 = dasar penuh; lantai atas tanpa lubang tangga + bordes di sisi tiba */}
-            {n === 1 ? <Box p={[0, -0.15, 0]} s={[16.4, 0.3, 8.4]} c={dark ? "#475577" : "#e7dcc8"} cast /> : (
+            {/* lantai: slab tebal + tepi depan lebih gelap; bordes tangga di sisi tiba */}
+            {n === 1 ? <Box p={[0, -0.17, 0]} s={[16.4, 0.34, 8.4]} c={pal.floor} cast /> : (
               <>
-                <Box p={[1, -0.15, 0]} s={[14, 0.3, 8]} c={pal.floor} cast />
-                <Box p={[-7, -0.15, landingZ(n)]} s={[2, 0.3, 2]} c={pal.floor} cast />
+                <Box p={[1, -0.17, 0]} s={[14, 0.34, 8]} c={pal.floor} cast />
+                <Box p={[-7, -0.17, landingZ(n)]} s={[2, 0.34, 2]} c={pal.floor} cast />
               </>
             )}
-            {/* aksen warna lantai + jendela dinding belakang */}
-            <Box p={[0, 0.1, -3.96]} s={[16, 0.14, 0.05]} c={info.accent} e={info.accent} cast={false} />
-            {n <= 4 && <><Box p={[3.2, 2.3, -3.98]} s={[3, 1.4, 0.06]} c={pal.glass} e={pal.glassE} cast={false} /><Box p={[-1.2, 2.3, -3.98]} s={[3, 1.4, 0.06]} c={pal.glass} e={pal.glassE} cast={false} /></>}
+            <Box p={[n === 1 ? 0 : 1, -0.17, n === 1 ? 4.22 : 4.02]} s={[n === 1 ? 16.4 : 14, 0.34, 0.04]} c={pal.edge} />
+            {/* LED neon: dasar dinding belakang & kiri + cove atas dinding belakang */}
+            <Led p={[0, 0.1, -3.95]} s={[15.9, 0.06, 0.05]} c={info.accent} glow={glow} />
+            <Led p={[-7.95, 0.1, 0]} s={[0.05, 0.06, 7.9]} c={info.accent} glow={glow} />
+            {n < FLOORS && <Led p={[0, 3.78, -3.94]} s={[15.9, 0.05, 0.05]} c={pal.neonA} glow={glow} />}
+            {/* jendela besar di dinding kiri + sekat */}
+            {[-2.6, 0, 2.6].map((z) => <Box key={z} p={[-7.97, 2.0, z]} s={[0.05, 2.4, 2.3]} c={pal.glass} e={pal.glassE} ei={pal.dark ? 0.9 : 0.55} />)}
+            {[-1.3, 1.3].map((z) => <Box key={z} p={[-7.95, 1.9, z]} s={[0.09, 3.6, 0.1]} c="#f8fafc" />)}
+            {n === FLOORS && <><Box p={[3.2, 2.3, -3.97]} s={[3, 1.4, 0.05]} c={pal.glass} e={pal.glassE} ei={pal.dark ? 0.9 : 0.5} /><Box p={[-1.2, 2.3, -3.97]} s={[3, 1.4, 0.05]} c={pal.glass} e={pal.glassE} ei={pal.dark ? 0.9 : 0.5} /></>}
             {/* meja kerja lantai ini */}
             {DESKS.map((d, i) => {
               if (d.floor !== n) return null;
               const a = agents.find((x) => x.deskIndex % DESKS.length === i && x.status === "working") ?? agents.find((x) => x.deskIndex % DESKS.length === i);
-              return <Desk key={i} x={d.pos[0]} z={d.pos[2] - 1.1} color={pal.desk} agentColor={a?.color ?? "#64748b"} active={a?.status === "working"} />;
+              return <Desk key={i} x={d.pos[0]} z={d.pos[2] - 1.1} pal={pal} agentColor={a?.color ?? "#64748b"} active={a?.status === "working"} glow={glow && decor} seed={i + 1} last={i % 5 === 4} />;
             })}
-            {(decor || n === FLOORS) && <FloorProps n={n} pal={pal} />}
-            {n < FLOORS && top > n && <Flight k={n} />}
+            {(decor || n === FLOORS) && <FloorProps n={n} pal={pal} glow={glow} />}
+            {n < FLOORS && top > n && <Flight k={n} pal={pal} />}
             <Label p={[0, 0.5, 4.7]}>Lantai {n} · {info.name}</Label>
-            {pointLights && <pointLight position={[0, 3.2, 0]} intensity={dark ? 16 : 3.5} color={n === 5 ? "#fbbf24" : "#e0f2fe"} distance={12} />}
+            {pointLights && <pointLight position={[0, 3.2, 0]} intensity={pal.dark ? 16 : 3.2} color={n === FLOORS ? "#fde8c8" : "#e8f3ff"} distance={13} />}
           </group>
         );
       })}

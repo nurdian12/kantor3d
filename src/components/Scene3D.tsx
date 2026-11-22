@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
@@ -11,15 +11,18 @@ import { DOWNGRADE_BELOW, QUALITY, QUALITY_ORDER } from "@/lib/quality";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 type Cam = { pos: [number, number, number]; target: [number, number, number] };
-/** Semua lantai: pandangan menyamping agar kelima lantai terlihat; fokus lantai n: dari atas-depan ke lantai n (lantai di atasnya disembunyikan) */
+/** Kamera isometrik: memandang dari sudut gedung (arah 45°) dengan lensa panjang (fov 20) agar perspektif nyaris datar seperti render referensi. */
 const MID = (FLOORS * FLOOR_H) / 2;
-const presetFor = (f: Focus): Cam =>
-  f === "all"
-    ? { pos: [13, MID + 4, 30], target: [0, MID - 0.5, 0] }
-    : Number(f) === FLOORS
-      // lantai 5: sasaran digeser ke kanan-depan agar dek rooftop (tempat banyak agen) ikut terbingkai
-      ? { pos: [2.6, floorY(5) + 16.5, 15.5], target: [2.6, floorY(5) + 0.3, 1.8] }
-      : { pos: [0, floorY(Number(f)) + 14.3, 12.5], target: [0, floorY(Number(f)) + 0.3, 0.4] };
+const along = (t: [number, number, number], d: [number, number, number], dist: number): [number, number, number] => {
+  const v = new THREE.Vector3(...d).normalize().multiplyScalar(dist); return [t[0] + v.x, t[1] + v.y, t[2] + v.z];
+};
+const presetFor = (f: Focus): Cam => {
+  if (f === "all") { const t: [number, number, number] = [0, MID - 0.5, 0]; return { pos: along(t, [1, 0.62, 1], 52 + FLOORS * 8), target: t }; }
+  const n = Number(f), y = floorY(n);
+  // lantai 5: sasaran digeser ke kanan-depan agar dek rooftop (banyak agen) ikut terbingkai
+  const t: [number, number, number] = n === FLOORS ? [2.6, y + 0.3, 1.8] : [0, y + 0.5, 0.3];
+  return { pos: along(t, [0.9, 1.0, 1], 54), target: t };
+};
 
 /** Animasi halus kamera ke preset saat fokus berubah; setelah itu kontrol bebas kembali ke pengguna */
 function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl | null> }) {
@@ -54,7 +57,7 @@ function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl |
           approach.current -= dt;
           dir.copy(camera.position).sub(c.target);
           const len = dir.length();
-          dir.setLength(len + (11 - len) * k);
+          dir.setLength(len + (30 - len) * k);
           camera.position.copy(c.target).add(dir);
         }
         c.update();
@@ -113,6 +116,24 @@ function FpsGuard() {
   return null;
 }
 
+/** Tanah: bidang abu lembut dengan sorot lebih terang di tengah + bayangan kabur di bawah gedung (tekstur kanvas, tanpa biaya bayangan realtime) */
+function Ground({ dark }: { dark: boolean }) {
+  const [glow, blob] = useMemo(() => {
+    if (typeof document === "undefined") return [null, null];
+    const mk = (w: number, h: number, draw: (g: CanvasRenderingContext2D) => void) => { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d")!); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
+    const glow = mk(256, 256, (g) => { const r = g.createRadialGradient(128, 128, 0, 128, 128, 128); r.addColorStop(0, "rgba(255,255,255,0.55)"); r.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = r; g.fillRect(0, 0, 256, 256); });
+    const blob = mk(256, 256, (g) => { g.filter = "blur(14px)"; g.fillStyle = "rgba(10,14,28,0.62)"; g.beginPath(); g.roundRect(52, 76, 152, 104, 10); g.fill(); });
+    return [glow, blob];
+  }, []);
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.7, 0]}><planeGeometry args={[900, 900]} /><meshStandardMaterial color={dark ? "#0f1729" : "#a8acb3"} roughness={1} /></mesh>
+      {glow && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.69, 0]}><planeGeometry args={[150, 150]} /><meshBasicMaterial map={glow} transparent opacity={dark ? 0.12 : 0.9} depthWrite={false} toneMapped={false} /></mesh>}
+      {blob && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.68, 0.4]}><planeGeometry args={[36, 22]} /><meshBasicMaterial map={blob} transparent opacity={dark ? 0.55 : 0.8} depthWrite={false} toneMapped={false} /></mesh>}
+    </group>
+  );
+}
+
 export default function Scene3D({ active = true }: { active?: boolean }) {
   const controls = useRef<OrbitControlsImpl>(null);
   const agents = useMissionStore((s) => s.agents);
@@ -128,23 +149,21 @@ export default function Scene3D({ active = true }: { active?: boolean }) {
   return (
     // Canvas TIDAK dibuat ulang saat kualitas berubah (teardown label Html drei memicu error removeChild).
     // Antialias hanya bisa ditentukan saat dibuat, jadi dipakai nilai awal; dpr/bayangan/FPS/lampu berubah langsung.
-    <Canvas frameloop={!active ? "never" : q.fps ? "demand" : "always"} shadows={q.shadows} camera={{ position: presetFor("all").pos, fov: 38 }}
+    <Canvas frameloop={!active ? "never" : q.fps ? "demand" : "always"} shadows={q.shadows} camera={{ position: presetFor("all").pos, fov: 20, near: 2, far: 700 }}
       onPointerMissed={() => select(null)} dpr={q.dpr} gl={{ antialias, powerPreference: "high-performance" }}>
       {active && q.fps > 0 && <FrameLimiter fps={q.fps} />}
       {active && <FpsGuard />}
-      <color attach="background" args={[dark ? "#121a33" : "#e8eef7"]} />
-      <fog attach="fog" args={[dark ? "#121a33" : "#e8eef7", 60, 130]} />
-      <ambientLight intensity={dark ? 1.1 : 1.1} />
-      <directionalLight ref={light} position={[16, 34, 24]} intensity={dark ? 1.3 : 1.7} castShadow={q.shadows} shadow-mapSize={[q.shadowMap || 512, q.shadowMap || 512]}
-        shadow-camera-left={-24} shadow-camera-right={24} shadow-camera-top={28} shadow-camera-bottom={-12} shadow-camera-far={110} />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.32, 0]} receiveShadow>
-        <planeGeometry args={[120, 120]} />
-        <meshStandardMaterial color={dark ? "#1a2342" : "#cfd8e6"} />
-      </mesh>
+      <color attach="background" args={[dark ? "#0b1020" : "#a3a7ae"]} />
+      <fog attach="fog" args={[dark ? "#0b1020" : "#a3a7ae", 170, 420]} />
+      <hemisphereLight args={[dark ? "#9db4e6" : "#ffffff", dark ? "#1b2540" : "#aeb4bf", dark ? 1.0 : 1.2]} />
+      <ambientLight intensity={dark ? 0.25 : 0.25} />
+      <directionalLight ref={light} position={[34, 70, 46]} intensity={dark ? 0.9 : 1.5} castShadow={q.shadows} shadow-mapSize={[q.shadowMap || 512, q.shadowMap || 512]}
+        shadow-camera-left={-28} shadow-camera-right={28} shadow-camera-top={36} shadow-camera-bottom={-16} shadow-camera-far={240} />
+      <Ground dark={dark} />
       <Office theme={theme} />
       {agents.map((a) => <Character key={a.id} agent={a} />)}
       <CameraRig controls={controls} />
-      <OrbitControls ref={controls} target={presetFor("all").target} maxPolarAngle={Math.PI / 2.1} minDistance={8} maxDistance={80} enablePan />
+      <OrbitControls ref={controls} target={presetFor("all").target} maxPolarAngle={Math.PI / 2.1} minDistance={16} maxDistance={240} enablePan />
     </Canvas>
   );
 }
