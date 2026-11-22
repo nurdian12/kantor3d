@@ -146,6 +146,8 @@ export default function Scene3D({ active = true }: { active?: boolean }) {
   // ukuran shadow-map berubah -> buang peta lama agar dibuat ulang dengan ukuran baru
   useEffect(() => { const sh = light.current?.shadow; if (sh?.map) { sh.map.dispose(); sh.map = null; } }, [q.shadowMap, q.shadows]);
   const dark = theme === "dark";
+  // ?clean=1: tanpa karakter (untuk render presentasi arsitektur)
+  const [clean] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("clean"));
   return (
     // Canvas TIDAK dibuat ulang saat kualitas berubah (teardown label Html drei memicu error removeChild).
     // Antialias hanya bisa ditentukan saat dibuat, jadi dipakai nilai awal; dpr/bayangan/FPS/lampu berubah langsung.
@@ -161,7 +163,7 @@ export default function Scene3D({ active = true }: { active?: boolean }) {
         shadow-camera-left={-34} shadow-camera-right={34} shadow-camera-top={36} shadow-camera-bottom={-16} shadow-camera-far={240} />
       <Ground dark={dark} />
       <Office theme={theme} />
-      {agents.map((a) => <Character key={a.id} agent={a} />)}
+      {!clean && agents.map((a) => <Character key={a.id} agent={a} />)}
       <CameraRig controls={controls} />
       <OrbitControls ref={controls} target={presetFor("all").target} maxPolarAngle={Math.PI / 2.1} minDistance={16} maxDistance={240} enablePan />
     </Canvas>
