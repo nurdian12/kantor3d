@@ -51,7 +51,8 @@ export function Character({ agent }: { agent: Agent }) {
     if (o) agentObjects.set(agent.id, o);
     return () => { agentObjects.delete(agent.id); };
   }, [agent.id]);
-  const [tagShown, setTagShown] = useState(true);
+  const [tagShown, setTagShown] = useState(false);
+  const hovered = useRef(false);
   const selected = useMissionStore((s) => s.selectedId === agent.id);
 
   const spot = spotFor(agent);
@@ -119,7 +120,7 @@ export function Character({ agent }: { agent: Agent }) {
     const show = agentVisible(focus, g.position.y);
     g.visible = show;
     // label nama (HTML) hanya saat berguna: di tampilan "Semua" cukup untuk agen yang bekerja/error/terpilih, agar tidak ramai & ringan
-    const wantTag = show && (focus !== "all" || agent.status !== "idle" || useMissionStore.getState().selectedId === agent.id);
+    const wantTag = show && (agent.status === "error" || hovered.current || useMissionStore.getState().selectedId === agent.id); // label hanya bila perlu: error, dipilih, atau disorot kursor
     if (wantTag !== tagShown) setTagShown(wantTag); // Html drei tidak mengikuti visible induk
 
     // animasi pose
@@ -151,7 +152,9 @@ export function Character({ agent }: { agent: Agent }) {
   const sc = statusColor[agent.status];
 
   return (
-    <group ref={root} position={startPos} onClick={(e) => { e.stopPropagation(); select(agent.id); }}>
+    <group ref={root} position={startPos} onClick={(e) => { e.stopPropagation(); select(agent.id); }}
+      onPointerOver={(e) => { e.stopPropagation(); hovered.current = true; document.body.style.cursor = "pointer"; }}
+      onPointerOut={() => { hovered.current = false; document.body.style.cursor = ""; }}>
       <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <ringGeometry args={[0.45, 0.58, 32]} />
         <meshBasicMaterial color={sc} transparent opacity={0.4} depthWrite={false} />
@@ -179,7 +182,7 @@ export function Character({ agent }: { agent: Agent }) {
         <Limb refObj={armL} len={0.62} w={0.12} color={agent.color} pos={[-0.3, 1.27, 0]} />
         <Limb refObj={armR} len={0.62} w={0.12} color={agent.color} pos={[0.3, 1.27, 0]} />
       </group>
-      {tagShown && <Html position={[0, 2.25 + (agent.status === "idle" ? (agent.idleIndex % 3) * 0.5 : 0), 0]} center distanceFactor={22} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
+      {tagShown && <Html position={[0, 2.25 + 0, 0]} center distanceFactor={22} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
         <div className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/20 bg-slate-900/85 px-2.5 py-1 text-[11px] font-medium text-white shadow-lg backdrop-blur">
           <span className="inline-block h-2 w-2 rounded-full" style={{ background: sc, boxShadow: `0 0 8px ${sc}` }} />
           {agent.name}

@@ -31,6 +31,8 @@ function Flight({ k, pal }: { k: number; pal: Pal }) {
 }
 
 function Label({ p, children }: { p: V3; children: React.ReactNode }) {
+  const focused = useMissionStore((s) => s.focus !== "all"); // di tampilan "Semua" label ruangan disembunyikan agar tidak ramai
+  if (!focused) return null;
   return (
     <Html position={p} center distanceFactor={20} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
       <div className="whitespace-nowrap rounded-md bg-slate-900/75 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur">{children}</div>
