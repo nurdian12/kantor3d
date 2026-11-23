@@ -18,7 +18,7 @@ interface WorkState {
   statsLoading: boolean;
   fetchStats: (force?: boolean) => Promise<void>;
   moveTask: (id: string, status: TaskStatus) => void;
-  addTask: (t: Pick<Task, "title" | "agentId" | "priority">) => void;
+  addTask: (t: Pick<Task, "title" | "agentId" | "priority"> & Partial<Pick<Task, "status" | "note" | "source">>) => void;
   removeTask: (id: string) => void;
   pushSys: (level: SysLevel, source: string, message: string) => void;
   clearSys: () => void;
@@ -52,7 +52,7 @@ export const useWorkStore = create<WorkState>((set) => ({
     } catch { set({ socialError: "Tidak dapat menghubungi server.", socialLoading: false }); }
   },
   moveTask: (id, status) => set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, status } : t)) })),
-  addTask: (t) => set((s) => ({ tasks: [{ id: `t${Date.now()}`, status: "todo", createdAt: Date.now(), ...t }, ...s.tasks] })),
+  addTask: (t) => set((s) => ({ tasks: [{ id: `t${Date.now()}${Math.random().toString(36).slice(2, 6)}`, status: "todo", createdAt: Date.now(), ...t }, ...s.tasks] })),
   removeTask: (id) => set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),
   pushSys: (level, source, message) =>
     set((s) => ({ sysLogs: [...s.sysLogs, { id: ++lineSeq, time: Date.now(), level, source, message }].slice(-MAX_LINES) })),

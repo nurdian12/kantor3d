@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { Agent, Pose } from "@/lib/types";
-import { DESKS, IDLE_SPOTS, agentVisible, floorOfY, stairPath, type Spot } from "@/lib/layout";
+import { DESKS, IDLE_SPOTS, routeTo, type Spot } from "@/lib/layout";
 import { useMissionStore, statusLabel } from "@/store/useMissionStore";
 
 const SPEED = 2.6;
@@ -12,16 +12,18 @@ const SPEED = 2.6;
 export const agentObjects = new Map<string, THREE.Object3D>();
 type V3 = [number, number, number];
 
-export function spotFor(agent: Agent): Spot {
-  // Working & Error tetap di meja lantai kerjanya (lantai 1-4); Idle di lantai 5 (lounge/kamar/balkon)
-  return agent.status === "idle" ? IDLE_SPOTS[agent.idleIndex % IDLE_SPOTS.length] : DESKS[agent.deskIndex % DESKS.length];
-}
-
-/** Jalur ke tujuan: langsung bila satu lantai; bila beda lantai, lewat semua tangga di antaranya */
-function buildPath(from: THREE.Vector3, to: Spot): V3[] {
-  const a = floorOfY(from.y);
-  if (a === to.floor) return [to.pos];
-  return [...stairPath(a, to.floor), to.pos];
+export function spotFor(agent: Agent, visiting?: { agentId: string } | null): Spot {
+  // Idle -> spot istirahat (tidur/duduk/billiard/berkeliling); Working & Error -> meja kerja.
+  if (agent.status === "idle") return IDLE_SPOTS[agent.idleIndex % IDLE_SPOTS.length];
+  // Orkestrator (Nova) yang sedang bekerja mendatangi meja agen yang ditangani: berdiri di belakang kursi, menghadap agen
+  if (agent.id === "manager" && visiting && visiting.agentId !== agent.id) {
+    const other = useMissionStore.getState().agents.find((x) => x.id === visiting.agentId);
+    if (other && other.status !== "idle") {
+      const d = DESKS[other.deskIndex % DESKS.length];
+      return { pos: [d.pos[0] + 0.9, 0, d.pos[2] + 1.7], rotY: Math.PI, pose: "stand", label: `Menangani ${other.name}` };
+    }
+  }
+  return DESKS[agent.deskIndex % DESKS.length];
 }
 
 const statusColor = { working: "#22c55e", idle: "#38bdf8", error: "#ef4444" } as const;
@@ -55,7 +57,8 @@ export function Character({ agent }: { agent: Agent }) {
   const hovered = useRef(false);
   const selected = useMissionStore((s) => s.selectedId === agent.id);
 
-  const spot = spotFor(agent);
+  const visiting = useMissionStore((s) => s.visiting);
+  const spot = spotFor(agent, visiting);
   const st = useRef({
     init: false,
     path: [] as V3[],
@@ -63,6 +66,8 @@ export function Character({ agent }: { agent: Agent }) {
     poseBlend: 0, // 0 = berdiri, 1 = pose target (sit/lie)
     targetKey: "",
     walking: false,
+    wIdx: 0,
+    nextMove: 0,
   });
 
   // posisi awal langsung di spot
@@ -78,14 +83,24 @@ export function Character({ agent }: { agent: Agent }) {
       g.rotation.y = spot.rotY;
       s.pose = spot.pose;
       s.poseBlend = 1;
-      s.targetKey = agent.status === "idle" ? "idle" : "desk";
+      s.targetKey = agent.status === "idle" ? "idle" : visiting && agent.id === "manager" ? "visit:" + visiting.agentId : "desk";
       s.init = true;
     }
-    const key = agent.status === "idle" ? "idle" : "desk";
+    const key = agent.status === "idle" ? "idle:" + agent.idleIndex : visiting && agent.id === "manager" ? "visit:" + visiting.agentId : "desk";
     if (key !== s.targetKey) {
       s.targetKey = key;
-      s.path = buildPath(g.position, spot);
+      s.path = routeTo([g.position.x, 0, g.position.z], spot);
+      s.wIdx = 0; s.nextMove = 0;
       s.poseBlend = 0; // berdiri dulu sebelum jalan
+    }
+    // spot berkeliling: setelah berhenti beberapa detik, lanjut ke titik berikutnya
+    if (spot.wander && s.path.length === 0) {
+      if (s.nextMove === 0) s.nextMove = t + 2.5 + ((agent.idleIndex * 37) % 30) / 10;
+      else if (t >= s.nextMove) {
+        s.wIdx = (s.wIdx + 1) % spot.wander.length;
+        s.path.push(spot.wander[s.wIdx]);
+        s.nextMove = 0;
+      }
     }
 
     // gerak sepanjang waypoint
@@ -115,9 +130,7 @@ export function Character({ agent }: { agent: Agent }) {
       s.poseBlend = Math.min(1, s.poseBlend + dt * 3);
     }
 
-    // fokus lantai: sembunyikan karakter di lantai yang tidak difokuskan
-    const focus = useMissionStore.getState().focus;
-    const show = agentVisible(focus, g.position.y);
+    const show = true;
     g.visible = show;
     // label nama (HTML) hanya saat berguna: di tampilan "Semua" cukup untuk agen yang bekerja/error/terpilih, agar tidak ramai & ringan
     const wantTag = show && (agent.status === "error" || hovered.current || useMissionStore.getState().selectedId === agent.id); // label hanya bila perlu: error, dipilih, atau disorot kursor

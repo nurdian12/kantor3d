@@ -44,7 +44,7 @@ export default function QuickPanel() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{a.name}</p>
-                  <p className="truncate text-[11px] text-slate-500">{a.role} · Lantai {spotFor(a).floor}</p>
+                  <p className="truncate text-[11px] text-slate-500">{a.role} · {spotFor(a).label}</p>
                 </div>
                 <span className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${badge[a.status]}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${dot[a.status]}`} />{statusLabel(a.status)}

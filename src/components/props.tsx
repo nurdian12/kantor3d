@@ -141,3 +141,27 @@ export function Sofa({ p, n = 3, color = "#9aa6b8", rotY = 0 }: { p: V3; n?: num
     </group>
   );
 }
+
+/** Kursi makan/rapat sederhana: pengguna menghadap +z pada rotY=0 (sandaran di -z) */
+export function DiningChair({ p, rotY = 0, color = "#9aa6b8" }: { p: V3; rotY?: number; color?: string }) {
+  return (
+    <group position={p} rotation={[0, rotY, 0]}>
+      <Box p={[0, 0.4, 0]} s={[0.52, 0.08, 0.52]} c={color} />
+      <Box p={[0, 0.72, -0.24]} s={[0.5, 0.56, 0.06]} c={color} />
+      {[[-0.22, -0.22], [0.22, -0.22], [-0.22, 0.22], [0.22, 0.22]].map(([x, z], i) => <Box key={i} p={[x, 0.18, z]} s={[0.04, 0.36, 0.04]} c="#6b7280" />)}
+    </group>
+  );
+}
+
+/** Rak buku / lemari pajangan */
+export function Shelf({ p, w = 2, h = 2.2, rotY = 0 }: { p: V3; w?: number; h?: number; rotY?: number }) {
+  return (
+    <group position={p} rotation={[0, rotY, 0]}>
+      <Box p={[0, h / 2, 0]} s={[w, h, 0.4]} c="#d6c7a8" cast />
+      {[0.35, 0.95, 1.55].filter((y) => y < h).map((y) => <group key={y}>
+        <Box p={[0, y, 0.12]} s={[w - 0.1, 0.04, 0.3]} c="#b79f78" />
+        {Array.from({ length: Math.floor(w / 0.32) }, (_, i) => <Box key={i} p={[-w / 2 + 0.25 + i * 0.3, y + 0.17, 0.12]} s={[0.12, 0.28 + (i % 3) * 0.05, 0.22]} c={["#6366f1", "#f59e0b", "#10b981", "#ec4899"][i % 4]} />)}
+      </group>)}
+    </group>
+  );
+}

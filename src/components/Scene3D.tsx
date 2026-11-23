@@ -5,23 +5,20 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Office } from "./Office";
 import { Character, agentObjects } from "./Character";
-import { B_CX, FLOORS, FLOOR_H, floorOfY, floorY } from "@/lib/layout";
+import { B_CX, zoneById } from "@/lib/layout";
 import { useMissionStore, type Focus } from "@/store/useMissionStore";
 import { DOWNGRADE_BELOW, QUALITY, QUALITY_ORDER } from "@/lib/quality";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 type Cam = { pos: [number, number, number]; target: [number, number, number] };
 /** Kamera isometrik: memandang dari sudut gedung (arah 45°) dengan lensa panjang (fov 20) agar perspektif nyaris datar seperti render referensi. */
-const MID = (FLOORS * FLOOR_H) / 2;
 const along = (t: [number, number, number], d: [number, number, number], dist: number): [number, number, number] => {
   const v = new THREE.Vector3(...d).normalize().multiplyScalar(dist); return [t[0] + v.x, t[1] + v.y, t[2] + v.z];
 };
 const presetFor = (f: Focus): Cam => {
-  if (f === "all") { const t: [number, number, number] = [B_CX, MID - 0.5, 0]; return { pos: along(t, [1, 0.62, 1], 62 + FLOORS * 8), target: t }; }
-  const n = Number(f), y = floorY(n);
-  // lantai 5: sasaran digeser ke kanan-depan agar dek rooftop (banyak agen) ikut terbingkai
-  const t: [number, number, number] = n === FLOORS ? [7, y + 0.3, 1.0] : [B_CX, y + 0.5, 0.3];
-  return { pos: along(t, [0.9, 1.0, 1], 66), target: t };
+  if (f === "all") { const t: [number, number, number] = [B_CX, 0.6, 0]; return { pos: along(t, [1, 0.6, 1.15], 104), target: t }; }
+  const z = zoneById(f), t: [number, number, number] = [(z.x0 + z.x1) / 2, 0.5, (z.z0 + z.z1) / 2];
+  return { pos: along(t, [0.9, 0.95, 1], f === "work" ? 70 : 46), target: t };
 };
 
 /** Animasi halus kamera ke preset saat fokus berubah; setelah itu kontrol bebas kembali ke pengguna */
@@ -37,9 +34,6 @@ function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl |
     if (!selectedId) return;
     approach.current = 2.5;
     // bila agen ada di lantai yang disembunyikan, tampilkan semua lantai
-    const o = agentObjects.get(selectedId);
-    const st = useMissionStore.getState();
-    if (o && st.focus !== "all" && floorOfY(o.position.y) !== Number(st.focus)) st.setFocus("all"); // agen di lantai yang disembunyikan
   }, [selectedId]);
   const tmp = useRef({ d: new THREE.Vector3(), dir: new THREE.Vector3() });
 
@@ -57,7 +51,7 @@ function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl |
           approach.current -= dt;
           dir.copy(camera.position).sub(c.target);
           const len = dir.length();
-          dir.setLength(len + (30 - len) * k);
+          dir.setLength(len + (34 - len) * k);
           camera.position.copy(c.target).add(dir);
         }
         c.update();
@@ -128,8 +122,8 @@ function Ground({ dark }: { dark: boolean }) {
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.7, 0]}><planeGeometry args={[900, 900]} /><meshStandardMaterial color={dark ? "#0f1729" : "#a8acb3"} roughness={1} /></mesh>
-      {glow && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.69, 0]}><planeGeometry args={[150, 150]} /><meshBasicMaterial map={glow} transparent opacity={dark ? 0.12 : 0.9} depthWrite={false} toneMapped={false} /></mesh>}
-      {blob && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.68, 0.4]}><planeGeometry args={[36, 22]} /><meshBasicMaterial map={blob} transparent opacity={dark ? 0.55 : 0.8} depthWrite={false} toneMapped={false} /></mesh>}
+      {glow && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.69, 0]}><planeGeometry args={[260, 260]} /><meshBasicMaterial map={glow} transparent opacity={dark ? 0.12 : 0.9} depthWrite={false} toneMapped={false} /></mesh>}
+      {blob && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.68, 0.4]}><planeGeometry args={[78, 40]} /><meshBasicMaterial map={blob} transparent opacity={dark ? 0.55 : 0.8} depthWrite={false} toneMapped={false} /></mesh>}
     </group>
   );
 }
@@ -156,16 +150,16 @@ export default function Scene3D({ active = true }: { active?: boolean }) {
       {active && q.fps > 0 && <FrameLimiter fps={q.fps} />}
       {active && <FpsGuard />}
       <color attach="background" args={[dark ? "#0b1020" : "#a3a7ae"]} />
-      <fog attach="fog" args={[dark ? "#0b1020" : "#a3a7ae", 170, 420]} />
+      <fog attach="fog" args={[dark ? "#0b1020" : "#a3a7ae", 220, 560]} />
       <hemisphereLight args={[dark ? "#9db4e6" : "#ffffff", dark ? "#1b2540" : "#aeb4bf", dark ? 1.0 : 1.2]} />
       <ambientLight intensity={dark ? 0.25 : 0.25} />
-      <directionalLight ref={light} position={[34, 70, 46]} intensity={dark ? 0.9 : 1.5} castShadow={q.shadows} shadow-mapSize={[q.shadowMap || 512, q.shadowMap || 512]}
-        shadow-camera-left={-34} shadow-camera-right={34} shadow-camera-top={36} shadow-camera-bottom={-16} shadow-camera-far={240} />
+      <directionalLight ref={light} position={[60, 110, 74]} intensity={dark ? 0.9 : 1.5} castShadow={q.shadows} shadow-mapSize={[q.shadowMap || 512, q.shadowMap || 512]}
+        shadow-camera-left={-52} shadow-camera-right={52} shadow-camera-top={44} shadow-camera-bottom={-30} shadow-camera-far={320} />
       <Ground dark={dark} />
       <Office theme={theme} />
       {!clean && agents.map((a) => <Character key={a.id} agent={a} />)}
       <CameraRig controls={controls} />
-      <OrbitControls ref={controls} target={presetFor("all").target} maxPolarAngle={Math.PI / 2.1} minDistance={16} maxDistance={240} enablePan />
+      <OrbitControls ref={controls} target={presetFor("all").target} maxPolarAngle={Math.PI / 2.1} minDistance={16} maxDistance={300} enablePan />
     </Canvas>
   );
 }

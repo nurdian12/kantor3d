@@ -2,7 +2,6 @@ import { create } from "zustand";
 import type { Agent, AgentStatus, LogEntry } from "@/lib/types";
 import { CAPACITY, DESKS } from "@/lib/layout";
 import type { Quality } from "@/lib/quality";
-import type { Focus } from "@/lib/layout";
 import { AGENT_META, NOT_CONNECTED_IDS } from "@/lib/agentsMeta";
 import type { RemoteAgent, RemoteLog } from "@/lib/protocol";
 import type { UsageRecord } from "@/lib/workTypes";
@@ -10,7 +9,8 @@ import type { UsageRecord } from "@/lib/workTypes";
 export type ViewMode = "3d" | "2d";
 export type Theme = "light" | "dark";
 export type Tab = "office" | "tasks" | "calendar" | "analytics" | "usage" | "memory" | "files" | "social" | "logs";
-export type { Focus } from "@/lib/layout";
+import type { Focus } from "@/lib/layout";
+export type { Focus };
 export type Connection = "offline" | "connecting" | "live";
 
 const PALETTE = ["#6366f1", "#10b981", "#f59e0b", "#ec4899", "#06b6d4", "#8b5cf6"];
@@ -60,6 +60,9 @@ interface MissionState {
   setFps: (n: number) => void;
   tab: Tab;
   setTab: (t: Tab) => void;
+  /** Orkestrator (Nova) sedang menangani agen ini (berjalan ke mejanya) */
+  visiting: { agentId: string; until: number } | null;
+  setVisiting: (v: { agentId: string; until: number } | null) => void;
   authenticated: boolean;
   setAuthenticated: (v: boolean) => void;
   focus: Focus;
@@ -90,6 +93,8 @@ export const useMissionStore = create<MissionState>((set, get) => ({
   viewMode: "3d",
   theme: "dark",
   connection: "offline",
+  visiting: null,
+  setVisiting: (visiting) => set({ visiting }),
   authenticated: false,
   setAuthenticated: (authenticated) => set({ authenticated }),
   quality: "high",
@@ -114,7 +119,7 @@ export const useMissionStore = create<MissionState>((set, get) => ({
     get().addLog(
       id,
       status === "error" ? "error" : status === "idle" ? "warn" : "info",
-      status === "working" ? `Mulai bekerja: ${task}` : status === "idle" ? "Berpindah ke area istirahat (lantai 2)" : task,
+      status === "working" ? `Mulai bekerja: ${task}` : status === "idle" ? "Berpindah ke area istirahat (ruang istirahat)" : task,
     );
   },
   cycleStatus: (id) => {

@@ -82,15 +82,20 @@ File contoh ada di `deploy/` (`mission-control.service`, `Caddyfile`, `deploy.sh
 5. Update: `deploy/deploy.sh`.
 Server WebSocket (`server/mock-server.mjs`) hanya mock untuk pengembangan — jangan dideploy; tanpa runtime agen sungguhan, biarkan `NEXT_PUBLIC_WS_URL` kosong.
 
-## Kantor 2 lantai & 14 divisi digital marketing
-Gaya visual mengikuti referensi kantor isometrik modern: dinding putih dengan jendela besar, LED neon, meja panjang putih, monitor lengkung, kursi ergonomis, layar dinding berisi kode/grafik, tanaman. Kamera isometrik (lensa panjang), latar abu-abu lembut.
+## Kantor satu lantai lebar & 14 divisi digital marketing
+Semua ruangan ada di lantai 1 (46 × 14 satuan), dengan gaya isometrik modern (dinding putih, LED neon, meja putih, monitor lengkung). Tombol fokus: Semua · Kerja · Rapat · Lobi · Duduk · Pantry · Billiard · Tidur.
 
-- **Gedung dilebarkan ke kanan (22 satuan).** Lantai 1 punya sayap *Pantry & Lounge Tamu* (bar kopi, sofa, rak pajangan); lantai 2 punya ruang *Billiard* (meja biliar, rak tongkat, papan dart, bar mini). Agen Idle juga bermain di sekitar meja biliar (`pool()` di `layout.ts`).
-- **Lantai 1 = area kerja** semua 14 divisi (15 meja, 3 baris × 5; `deskIndex` = baris×5+kolom). **Lantai 2 = istirahat** (lounge, 2 kamar, rooftop; 14 spot). Agen Working/Error duduk di meja, Idle naik tangga ke lantai 2.
-- Satu agen per divisi; nama/peran/warna/meja/sumber data ada di satu tempat: `src/lib/agentsMeta.ts`. Perabot ada di `src/components/props.tsx`, tata letak di `Office.tsx`, jumlah lantai/meja di `src/lib/layout.ts`.
-- **Data nyata (6 divisi):** Orbit (jadwal & posting gagal), Sapa (komentar), Kompas (statistik akun), Vega (funnel kontak/CRM), Lumi (aset di storage), Nova (ringkasan alur).
-- **Belum terhubung (8 divisi):** alasannya tertulis di panel kru dan tab Sosial → "Divisi digital marketing"; tidak ada data palsu.
-- Kualitas: **Ringan** menghapus bayangan, lampu titik, halo LED, dan dekorasi; **Sedang** menghapus lampu titik dan halo.
+| Zona (barat → timur) | Isi |
+|---|---|
+| Ruang Rapat, Lobi & Resepsionis | meja rapat 6 kursi + layar, resepsionis, sofa tunggu |
+| Area Kerja | 15 meja (3 baris × 5) berjarak lapang dengan lorong di antara baris, 3 layar dinding, meja berdiri kolaboratif |
+| Ruang Duduk, Pantry & Kafe | sofa + TV + rak buku; meja makan 4 kursi, bar kopi |
+| Ruang Billiard, Kamar Tidur | meja biliar, dart, bar mini; 3 tempat tidur |
+
+- **Agen Idle tersebar** (`IDLE_SPOTS` di `src/lib/layout.ts`): tidur, duduk di ruang duduk/pantry/rapat/lobi, main billiard, atau **berkeliling** (4 rute, berhenti beberapa detik di tiap titik). Working/Error duduk di meja; perpindahan lewat lorong utama (`routeTo`).
+- **Orkestrator = Nova** (`src/lib/useOrchestrator.ts`): tiap 5 dtk memantau agen dan data jadwal, lalu: agen Error → instruksi pemulihan + tugas Kanban + Nova berjalan ke meja agen itu; posting gagal → Orbit menjadwalkan ulang; komentar menunggu → Sapa; kontak jatuh tempo → Vega; antrean kosong → Orbit mengisi jadwal; agen pulih → dicatat. Instruksi muncul di Log, panel kru, dan Kanban (kartu "Ditugaskan oleh Nova"). **Koordinasi ini internal** (log, tugas, gerak karakter): tidak menulis apa pun ke Repliz.
+- Nama/peran/warna/meja/spot istirahat tiap agen: `src/lib/agentsMeta.ts`. Data nyata vs belum terhubung: lihat tabel divisi di atas.
+- Kualitas: **Ringan** menghapus bayangan, lampu, halo LED, dan semua dekorasi zona selain area kerja.
 
 ## Deploy otomatis dari GitHub (opsional)
 `.github/workflows/deploy.yml` menjalankan `deploy/deploy.sh` di VPS lewat SSH setiap ada push ke cabang `claude/nice-babbage-mkytfe` (atau manual dari tab Actions). Butuh 4 *secret* di GitHub (Settings → Secrets and variables → Actions): `VPS_HOST` (IP publik), `VPS_USER` (`missioncontrol`), `VPS_SSH_KEY` (kunci privat khusus deploy), `VPS_KNOWN_HOSTS` (hasil `ssh-keyscan IP`). Di VPS, user itu hanya perlu izin `sudo systemctl restart/status mission-control` (lihat langkah di percakapan/README deploy).

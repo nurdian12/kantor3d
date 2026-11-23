@@ -49,7 +49,7 @@ export function deriveAgentStates(s: SocialSummary, stats: StatsSummary | null, 
       ? { status: "idle", task: `${stats.accounts.length} akun dipantau · ${k(followers)} pengikut/subscriber` }
       : { status: "idle", task: "Memuat statistik akun…" };
 
-  const busy = s.schedule.pending > 0 || s.comments.total > 0;
+  const busy = s.schedule.pending > 0 || s.comments.total > 0 || s.failed.length > 0;
   const manager: State = {
     status: busy ? "working" : "idle",
     task: `Memantau alur: ${s.schedule.pending} terjadwal · ${s.schedule.error} gagal · ${s.comments.total} komentar menunggu`,
