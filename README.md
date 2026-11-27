@@ -99,3 +99,9 @@ Semua ruangan ada di lantai 1 (46 × 14 satuan), dengan gaya isometrik modern (d
 
 ## Deploy otomatis dari GitHub (opsional)
 `.github/workflows/deploy.yml` menjalankan `deploy/deploy.sh` di VPS lewat SSH setiap ada push ke cabang `claude/nice-babbage-mkytfe` (atau manual dari tab Actions). Butuh 4 *secret* di GitHub (Settings → Secrets and variables → Actions): `VPS_HOST` (IP publik), `VPS_USER` (`missioncontrol`), `VPS_SSH_KEY` (kunci privat khusus deploy), `VPS_KNOWN_HOSTS` (hasil `ssh-keyscan IP`). Di VPS, user itu hanya perlu izin `sudo systemctl restart/status mission-control` (lihat langkah di percakapan/README deploy).
+
+## Bot Telegram (notifikasi & perintah)
+`server/notifier.mjs` berjalan terpisah dari aplikasi web (24 jam lewat systemd, `deploy/mission-notifier.service`) dan hanya **membaca** Repliz.
+- **Peringatan otomatis** (dicek tiap 2 menit, `POLL_SECONDS`): posting baru gagal (dengan alasannya), akun terputus/tersambung kembali, komentar menumpuk (≥ `COMMENT_ALERT_MIN`, maks. 1× per 6 jam), antrean posting kosong, dan ringkasan harian (`SUMMARY_HOUR`). Kondisi lama tidak diulang (state di `.notifier-state.json`); saat pertama jalan hanya mengirim pesan "aktif" + ringkasan.
+- **Perintah** (hanya dari `TELEGRAM_CHAT_ID`, chat lain diabaikan): `/status`, `/gagal`, `/komentar`, `/akun`, `/bantuan`.
+- **Setup:** buat bot di @BotFather → isi `TELEGRAM_BOT_TOKEN` di `.env.local` → kirim pesan apa saja ke bot → `node server/notifier.mjs --whoami` untuk mendapat `TELEGRAM_CHAT_ID` → isi → jalankan layanan. Token tidak pernah dicetak ke log.

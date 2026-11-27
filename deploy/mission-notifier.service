@@ -1,0 +1,22 @@
+# /etc/systemd/system/mission-notifier.service
+[Unit]
+Description=Mission Control - notifikasi & perintah Telegram
+After=network-online.target mission-control.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=missioncontrol
+WorkingDirectory=/opt/kantor3d
+# Membaca env yang sama dengan aplikasi (REPLIZ_*, TELEGRAM_*); baris diawali # diabaikan
+EnvironmentFile=/opt/kantor3d/.env.local
+Environment=TZ=Asia/Jakarta
+ExecStart=/usr/bin/node server/notifier.mjs
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
